@@ -40,33 +40,11 @@ a {
   gap: 22px;
 }
 
-.page-header {
+.page-actions {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-end;
   gap: 18px;
-}
-
-.page-kicker {
-  margin: 0 0 4px;
-  color: var(--color-muted);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: 0;
-}
-
-.page-subtitle {
-  margin: 7px 0 0;
-  max-width: 720px;
-  color: var(--color-muted);
 }
 
 .panel {
@@ -212,7 +190,11 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .page-header {
-    display: grid;
+  .page-actions {
+    justify-content: stretch;
+  }
+
+  .page-actions .btn {
+    width: 100%;
   }
 }

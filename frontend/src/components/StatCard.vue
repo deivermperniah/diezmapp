@@ -10,7 +10,7 @@ defineProps({
   <article class="stat-card">
     <span>{{ label }}</span>
     <strong>{{ value }}</strong>
-    <small>{{ detail }}</small>
+    <small v-if="detail">{{ detail }}</small>
   </article>
 </template>
 

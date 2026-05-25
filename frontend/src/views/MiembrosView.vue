@@ -108,12 +108,7 @@ onMounted(loadData)
 
 <template>
   <section class="page">
-    <div class="page-header">
-      <div>
-        <p class="page-kicker">Registro</p>
-        <h2 class="page-title">Miembros</h2>
-        <p class="page-subtitle">Administra las personas asociadas a los sobres registrados.</p>
-      </div>
+    <div class="page-actions">
       <button class="btn btn-secondary" type="button" @click="loadData">Actualizar</button>
     </div>
 

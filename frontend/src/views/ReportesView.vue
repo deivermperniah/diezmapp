@@ -73,28 +73,21 @@ onMounted(loadReportes)
 
 <template>
   <section class="page">
-    <div class="page-header">
-      <div>
-        <p class="page-kicker">Analisis</p>
-        <h2 class="page-title">Reportes</h2>
-        <p class="page-subtitle">Consulta totales semanales y mensuales listos para cierre.</p>
-      </div>
+    <div class="page-actions">
       <button class="btn btn-secondary" type="button" @click="loadReportes">Actualizar</button>
     </div>
 
     <p v-if="error" class="status status-error">{{ error }}</p>
 
     <div class="grid grid-3">
-      <StatCard label="Diezmos" :value="money(mensual.totals.totalDiezmos)" detail="Mes filtrado" />
+      <StatCard label="Diezmos" :value="money(mensual.totals.totalDiezmos)" />
       <StatCard
         label="Pacto amor"
         :value="money(mensual.totals.totalPactoAmor)"
-        detail="Mes filtrado"
       />
       <StatCard
         label="Total general"
         :value="money(mensual.totals.totalGeneral)"
-        detail="Mes filtrado"
       />
     </div>
 

@@ -63,12 +63,7 @@ onMounted(loadDashboard)
 
 <template>
   <section class="page">
-    <div class="page-header">
-      <div>
-        <p class="page-kicker">Resumen general</p>
-        <h2 class="page-title">Dashboard</h2>
-        <p class="page-subtitle">Vista rapida del movimiento registrado en DIEZMAPP.</p>
-      </div>
+    <div class="page-actions">
       <button class="btn btn-secondary" type="button" @click="loadDashboard">Actualizar</button>
     </div>
 
@@ -76,26 +71,20 @@ onMounted(loadDashboard)
     <p v-else-if="loading" class="status">Cargando informacion...</p>
 
     <div class="grid grid-3">
-      <StatCard label="Miembros" :value="miembros.length" detail="Registrados en la iglesia" />
-      <StatCard label="Sobres" :value="sobres.length" detail="Sobres cargados" />
+      <StatCard label="Miembros" :value="miembros.length" />
+      <StatCard label="Sobres" :value="sobres.length" />
       <StatCard
         label="Total del mes"
         :value="money(reporteMensual.totals.totalGeneral)"
-        :detail="`Mes ${currentMonth}/${currentYear}`"
       />
     </div>
 
     <div class="grid grid-3">
-      <StatCard label="Ofrendas" :value="ofrendas.length" detail="Colaboraciones registradas" />
-      <StatCard
-        label="Transferencias"
-        :value="transferencias.length"
-        detail="Operaciones bancarias"
-      />
+      <StatCard label="Ofrendas" :value="ofrendas.length" />
+      <StatCard label="Transferencias" :value="transferencias.length" />
       <StatCard
         label="Diezmos del mes"
         :value="money(reporteMensual.totals.totalDiezmos)"
-        detail="Solo monto diezmo"
       />
     </div>
 

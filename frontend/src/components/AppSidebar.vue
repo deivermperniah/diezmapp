@@ -15,7 +15,6 @@ const navItems = [
       <div class="brand-mark">D</div>
       <div>
         <strong>DIEZMAPP</strong>
-        <span>Administracion</span>
       </div>
     </div>
 
@@ -56,20 +55,13 @@ const navItems = [
   font-weight: 900;
 }
 
-.brand strong,
-.brand span {
+.brand strong {
   display: block;
 }
 
 .brand strong {
   font-size: 16px;
   letter-spacing: 0;
-}
-
-.brand span {
-  color: var(--color-sidebar-muted);
-  font-size: 13px;
-  font-weight: 700;
 }
 
 .nav-list {

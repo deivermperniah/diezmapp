@@ -1,10 +1,16 @@
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const pageTitle = computed(() => route.meta.title || 'DIEZMAPP')
+</script>
+
 <template>
   <header class="topbar">
     <div>
-      <p class="eyebrow">Sistema de gestion</p>
-      <h1>Diezmos y ofrendas</h1>
+      <h1>{{ pageTitle }}</h1>
     </div>
-    <div class="topbar-badge">Local</div>
   </header>
 </template>
 
@@ -21,29 +27,10 @@
   backdrop-filter: blur(14px);
 }
 
-.eyebrow {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
 h1 {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: 19px;
   font-weight: 900;
-}
-
-.topbar-badge {
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--color-muted);
-  padding: 7px 12px;
-  font-size: 13px;
-  font-weight: 800;
 }
 
 @media (max-width: 860px) {
