@@ -3,13 +3,16 @@ import {
   getSiguienteNumeroSobre,
   getSobreById,
   getSobres,
+  getSobresByIglesia,
   registerSobre,
   removeSobre,
 } from './sobres.service.js';
 
-export const listSobres = async (_req, res, next) => {
+export const listSobres = async (req, res, next) => {
   try {
-    const sobres = await getSobres();
+    const sobres = req.query.idIglesia
+      ? await getSobresByIglesia(req.query.idIglesia)
+      : await getSobres();
 
     res.status(200).json({
       success: true,
@@ -35,7 +38,7 @@ export const showSobre = async (req, res, next) => {
 
 export const showSiguienteNumeroSobre = async (req, res, next) => {
   try {
-    const siguienteNumero = await getSiguienteNumeroSobre(req.query.fecha);
+    const siguienteNumero = await getSiguienteNumeroSobre(req.query.fecha, req.query.idIglesia);
 
     res.status(200).json({
       success: true,

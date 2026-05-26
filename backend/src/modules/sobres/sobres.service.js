@@ -1,4 +1,5 @@
 import { AppError } from '../../utils/app-error.js';
+import { convertMoneyToUsd } from '../../services/currency.service.js';
 import {
   createSobre,
   deleteSobre,
@@ -21,6 +22,16 @@ const parsePositiveInteger = (value, fieldName) => {
 const parseOptionalPositiveInteger = (value, fieldName) => {
   if (value === undefined || value === null || value === '') return null;
   return parsePositiveInteger(value, fieldName);
+};
+
+const parseCurrency = (value, fieldName) => {
+  const parsedValue = String(value || '').trim();
+
+  if (!['Bs', '$'].includes(parsedValue)) {
+    throw new AppError(`${fieldName} debe ser Bs o $.`, 400);
+  }
+
+  return parsedValue;
 };
 
 const parseMoney = (value, fieldName, { required = true } = {}) => {
@@ -56,28 +67,50 @@ const parseFecha = (fecha) => {
 
 const parseId = (idSobre) => parsePositiveInteger(idSobre, 'El id del sobre');
 
-const validateSobrePayload = (payload) => {
+const validateSobrePayload = async (payload) => {
   const { fecha, mes, anio } = parseFecha(payload.fecha);
   const montoDiezmo = parseMoney(payload.montoDiezmo, 'El monto de diezmo');
   const montoPactoAmor = parseMoney(payload.montoPactoAmor, 'El monto de pacto de amor', {
     required: false,
   });
+  const diezmo = await convertMoneyToUsd({
+    amount: montoDiezmo,
+    idMoneda: parseCurrency(payload.idMonedaDiezmo, 'La moneda del diezmo'),
+  });
+  const pacto =
+    montoPactoAmor > 0
+      ? await convertMoneyToUsd({
+          amount: montoPactoAmor,
+          idMoneda: parseCurrency(payload.idMonedaPacto, 'La moneda del pacto'),
+        })
+      : null;
 
   return {
     fecha,
     mes,
     anio,
+    idIglesia: parsePositiveInteger(payload.idIglesia, 'La iglesia'),
     idMiembro: parsePositiveInteger(payload.idMiembro, 'El miembro'),
-    montoDiezmo,
-    idMonedaDiezmo: parseOptionalPositiveInteger(payload.idMonedaDiezmo, 'La moneda del diezmo'),
-    montoPactoAmor,
-    idMonedaPacto: parseOptionalPositiveInteger(payload.idMonedaPacto, 'La moneda del pacto'),
-    totalIncluido: Number((montoDiezmo + montoPactoAmor).toFixed(2)),
+    montoDiezmo: diezmo.amountUsd,
+    idMonedaDiezmo: diezmo.usdCurrencyId,
+    montoDiezmoOriginal: diezmo.originalAmount,
+    idMonedaDiezmoOriginal: diezmo.originalCurrencyId,
+    tasaBcvDiezmo: diezmo.tasaBcvDolar,
+    montoPactoAmor: pacto?.amountUsd || 0,
+    idMonedaPacto: pacto?.usdCurrencyId || diezmo.usdCurrencyId,
+    montoPactoAmorOriginal: pacto?.originalAmount || 0,
+    idMonedaPactoOriginal: pacto?.originalCurrencyId || null,
+    tasaBcvPacto: pacto?.tasaBcvDolar || 1,
+    totalIncluido: Number((diezmo.amountUsd + (pacto?.amountUsd || 0)).toFixed(2)),
   };
 };
 
 export const getSobres = async () => {
   return findAllSobres();
+};
+
+export const getSobresByIglesia = async (idIglesia) => {
+  return findAllSobres({ idIglesia: parsePositiveInteger(idIglesia, 'La iglesia') });
 };
 
 export const getSobreById = async (idSobre) => {
@@ -90,9 +123,13 @@ export const getSobreById = async (idSobre) => {
   return sobre;
 };
 
-export const getSiguienteNumeroSobre = async (fecha) => {
+export const getSiguienteNumeroSobre = async (fecha, idIglesia) => {
   const { mes, anio } = parseFecha(fecha);
-  const siguienteNumero = await findNextNumeroSobre({ mes, anio });
+  const siguienteNumero = await findNextNumeroSobre({
+    mes,
+    anio,
+    idIglesia: idIglesia ? parsePositiveInteger(idIglesia, 'La iglesia') : null,
+  });
 
   return {
     fecha,
@@ -103,13 +140,13 @@ export const getSiguienteNumeroSobre = async (fecha) => {
 };
 
 export const registerSobre = async (payload) => {
-  const sobreData = validateSobrePayload(payload);
+  const sobreData = await validateSobrePayload(payload);
   return createSobre(sobreData);
 };
 
 export const editSobre = async (idSobre, payload) => {
   const currentSobre = await getSobreById(idSobre);
-  const sobreData = validateSobrePayload(payload);
+  const sobreData = await validateSobrePayload(payload);
 
   if (currentSobre.mes !== sobreData.mes || currentSobre.anio !== sobreData.anio) {
     throw new AppError(

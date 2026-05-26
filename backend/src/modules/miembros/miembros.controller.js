@@ -2,13 +2,16 @@ import {
   editMiembro,
   getMiembroById,
   getMiembros,
+  getMiembrosByIglesia,
   registerMiembro,
   removeMiembro,
 } from './miembros.service.js';
 
-export const listMiembros = async (_req, res, next) => {
+export const listMiembros = async (req, res, next) => {
   try {
-    const miembros = await getMiembros();
+    const miembros = req.query.idIglesia
+      ? await getMiembrosByIglesia(req.query.idIglesia)
+      : await getMiembros();
 
     res.status(200).json({
       success: true,

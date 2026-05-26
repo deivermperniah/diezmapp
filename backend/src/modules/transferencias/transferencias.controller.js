@@ -2,14 +2,17 @@ import {
   editTransferencia,
   getTransferenciaById,
   getTransferencias,
+  getTransferenciasByIglesia,
   getTransferenciasBySobre,
   registerTransferencia,
   removeTransferencia,
 } from './transferencias.service.js';
 
-export const listTransferencias = async (_req, res, next) => {
+export const listTransferencias = async (req, res, next) => {
   try {
-    const transferencias = await getTransferencias();
+    const transferencias = req.query.idIglesia
+      ? await getTransferenciasByIglesia(req.query.idIglesia)
+      : await getTransferencias();
 
     res.status(200).json({
       success: true,

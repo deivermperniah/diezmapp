@@ -1,4 +1,5 @@
 import { AppError } from '../../utils/app-error.js';
+import { convertMoneyToUsd } from '../../services/currency.service.js';
 import {
   createTransferencia,
   deleteTransferencia,
@@ -13,6 +14,16 @@ const parsePositiveInteger = (value, fieldName) => {
 
   if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
     throw new AppError(`${fieldName} no es valido.`, 400);
+  }
+
+  return parsedValue;
+};
+
+const parseCurrency = (value, fieldName) => {
+  const parsedValue = String(value || '').trim();
+
+  if (!['Bs', '$'].includes(parsedValue)) {
+    throw new AppError(`${fieldName} debe ser Bs o $.`, 400);
   }
 
   return parsedValue;
@@ -57,22 +68,36 @@ const parseFecha = (fecha, fieldName) => {
   return fecha;
 };
 
-const validateTransferenciaPayload = (payload) => ({
-  idSobre: parsePositiveInteger(payload.idSobre, 'El sobre'),
-  fechaTransferencia: parseFecha(payload.fechaTransferencia, 'La fecha de transferencia'),
-  numeroTransferencia: parseRequiredText(
-    payload.numeroTransferencia,
-    'El numero de transferencia',
-  ),
-  bancoReceptorCuenta: parseRequiredText(
-    payload.bancoReceptorCuenta,
-    'El banco o cuenta receptora',
-  ),
-  montoTransferencia: parseMoney(payload.montoTransferencia, 'El monto de transferencia'),
-});
+const validateTransferenciaPayload = async (payload) => {
+  const conversion = await convertMoneyToUsd({
+    amount: parseMoney(payload.montoTransferencia, 'El monto de transferencia'),
+    idMoneda: parseCurrency(payload.idMoneda, 'La moneda'),
+  });
+
+  return {
+    idSobre: parsePositiveInteger(payload.idSobre, 'El sobre'),
+    fechaTransferencia: parseFecha(payload.fechaTransferencia, 'La fecha de transferencia'),
+    numeroTransferencia: parseRequiredText(
+      payload.numeroTransferencia,
+      'El numero de transferencia',
+    ),
+    bancoReceptorCuenta: parseRequiredText(
+      payload.bancoReceptorCuenta,
+      'El banco o cuenta receptora',
+    ),
+    montoTransferencia: conversion.amountUsd,
+    montoTransferenciaOriginal: conversion.originalAmount,
+    idMonedaOriginal: conversion.originalCurrencyId,
+    tasaBcvDolar: conversion.tasaBcvDolar,
+  };
+};
 
 export const getTransferencias = async () => {
   return findAllTransferencias();
+};
+
+export const getTransferenciasByIglesia = async (idIglesia) => {
+  return findAllTransferencias({ idIglesia: parsePositiveInteger(idIglesia, 'La iglesia') });
 };
 
 export const getTransferenciaById = async (idTransferencia) => {
@@ -92,12 +117,12 @@ export const getTransferenciasBySobre = async (idSobre) => {
 };
 
 export const registerTransferencia = async (payload) => {
-  const transferenciaData = validateTransferenciaPayload(payload);
+  const transferenciaData = await validateTransferenciaPayload(payload);
   return createTransferencia(transferenciaData);
 };
 
 export const editTransferencia = async (idTransferencia, payload) => {
-  const transferenciaData = validateTransferenciaPayload(payload);
+  const transferenciaData = await validateTransferenciaPayload(payload);
   const transferencia = await updateTransferencia(
     parsePositiveInteger(idTransferencia, 'El id de la transferencia'),
     transferenciaData,

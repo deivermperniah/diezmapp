@@ -2,14 +2,17 @@ import {
   editOfrenda,
   getOfrendaById,
   getOfrendas,
+  getOfrendasByIglesia,
   getOfrendasBySobre,
   registerOfrenda,
   removeOfrenda,
 } from './ofrendas.service.js';
 
-export const listOfrendas = async (_req, res, next) => {
+export const listOfrendas = async (req, res, next) => {
   try {
-    const ofrendas = await getOfrendas();
+    const ofrendas = req.query.idIglesia
+      ? await getOfrendasByIglesia(req.query.idIglesia)
+      : await getOfrendas();
 
     res.status(200).json({
       success: true,

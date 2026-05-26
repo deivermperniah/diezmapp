@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import configuracionRoutes from '../modules/configuracion/configuracion.routes.js';
 import iglesiasRoutes from '../modules/iglesias/iglesias.routes.js';
 import miembrosRoutes from '../modules/miembros/miembros.routes.js';
 import monedasRoutes from '../modules/monedas/monedas.routes.js';
@@ -11,6 +12,7 @@ import healthRoutes from './health.routes.js';
 const router = Router();
 
 router.use('/health', healthRoutes);
+router.use('/configuracion', configuracionRoutes);
 router.use('/iglesias', iglesiasRoutes);
 router.use('/miembros', miembrosRoutes);
 router.use('/monedas', monedasRoutes);

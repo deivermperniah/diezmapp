@@ -46,6 +46,10 @@ export const getMiembros = async () => {
   return findAllMiembros();
 };
 
+export const getMiembrosByIglesia = async (idIglesia) => {
+  return findAllMiembros({ idIglesia: parseId(idIglesia) });
+};
+
 export const getMiembroById = async (idMiembro) => {
   const miembro = await findMiembroById(parseId(idMiembro));
 

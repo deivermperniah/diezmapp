@@ -1,6 +1,6 @@
 import { query } from '../../db/query.js';
 
-export const findReporteSemanal = async ({ fechaInicio, fechaFin }) => {
+export const findReporteSemanal = async ({ fechaInicio, fechaFin, idIglesia }) => {
   const result = await query(
     `
       SELECT
@@ -20,15 +20,16 @@ export const findReporteSemanal = async ({ fechaInicio, fechaFin }) => {
         GROUP BY Id_Sobre
       ) o ON o.Id_Sobre = s.Id_Sobre
       WHERE s.Fecha BETWEEN $1 AND $2
+        AND ($3::INTEGER IS NULL OR s.Id_Iglesia = $3)
       ORDER BY s.Fecha ASC, s.Numero_Sobre ASC
     `,
-    [fechaInicio, fechaFin],
+    [fechaInicio, fechaFin, idIglesia || null],
   );
 
   return result.rows;
 };
 
-export const findReporteMensual = async ({ mes, anio }) => {
+export const findReporteMensual = async ({ mes, anio, idIglesia }) => {
   const result = await query(
     `
       SELECT
@@ -53,9 +54,10 @@ export const findReporteMensual = async ({ mes, anio }) => {
         GROUP BY Id_Sobre
       ) o ON o.Id_Sobre = s.Id_Sobre
       WHERE s.Mes = $1 AND s.Anio = $2
+        AND ($3::INTEGER IS NULL OR s.Id_Iglesia = $3)
       ORDER BY s.Fecha ASC, s.Numero_Sobre ASC
     `,
-    [mes, anio],
+    [mes, anio, idIglesia || null],
   );
 
   return result.rows;

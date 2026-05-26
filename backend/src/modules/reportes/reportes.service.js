@@ -40,6 +40,17 @@ const parseAnio = (anio) => {
   return parsedAnio;
 };
 
+const parseOptionalId = (value, fieldName) => {
+  if (!value) return null;
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    throw new AppError(`${fieldName} no es valida.`, 400);
+  }
+
+  return parsedValue;
+};
+
 const toNumber = (value) => Number(value || 0);
 
 const buildMensualTotals = (items) => {
@@ -74,7 +85,7 @@ const buildSemanalTotals = (items) => {
   };
 };
 
-export const getReporteSemanal = async ({ fechaInicio, fechaFin }) => {
+export const getReporteSemanal = async ({ fechaInicio, fechaFin, idIglesia }) => {
   const parsedFechaInicio = parseFecha(fechaInicio, 'La fecha de inicio');
   const parsedFechaFin = parseFecha(fechaFin, 'La fecha de fin');
 
@@ -85,6 +96,7 @@ export const getReporteSemanal = async ({ fechaInicio, fechaFin }) => {
   const items = await findReporteSemanal({
     fechaInicio: parsedFechaInicio,
     fechaFin: parsedFechaFin,
+    idIglesia: parseOptionalId(idIglesia, 'La iglesia'),
   });
 
   return {
@@ -95,13 +107,14 @@ export const getReporteSemanal = async ({ fechaInicio, fechaFin }) => {
   };
 };
 
-export const getReporteMensual = async ({ mes, anio }) => {
+export const getReporteMensual = async ({ mes, anio, idIglesia }) => {
   const parsedMes = parseMes(mes);
   const parsedAnio = parseAnio(anio);
 
   const items = await findReporteMensual({
     mes: parsedMes,
     anio: parsedAnio,
+    idIglesia: parseOptionalId(idIglesia, 'La iglesia'),
   });
 
   return {

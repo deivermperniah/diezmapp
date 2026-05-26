@@ -11,11 +11,19 @@ const miembroSelect = `
   INNER JOIN IGLESIA i ON i.Id_Iglesia = m.Id_Iglesia
 `;
 
-export const findAllMiembros = async () => {
-  const result = await query(`
-    ${miembroSelect}
-    ORDER BY m.Nombre ASC
-  `);
+export const findAllMiembros = async ({ idIglesia } = {}) => {
+  const params = [];
+  const where = idIglesia ? 'WHERE m.Id_Iglesia = $1' : '';
+  if (idIglesia) params.push(idIglesia);
+
+  const result = await query(
+    `
+      ${miembroSelect}
+      ${where}
+      ORDER BY m.Nombre ASC
+    `,
+    params,
+  );
 
   return result.rows;
 };

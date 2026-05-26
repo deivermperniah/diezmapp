@@ -1,4 +1,5 @@
 import { AppError } from '../../utils/app-error.js';
+import { convertMoneyToUsd } from '../../services/currency.service.js';
 import {
   createOfrenda,
   deleteOfrenda,
@@ -18,6 +19,16 @@ const parsePositiveInteger = (value, fieldName) => {
   return parsedValue;
 };
 
+const parseCurrency = (value, fieldName) => {
+  const parsedValue = String(value || '').trim();
+
+  if (!['Bs', '$'].includes(parsedValue)) {
+    throw new AppError(`${fieldName} debe ser Bs o $.`, 400);
+  }
+
+  return parsedValue;
+};
+
 const parseMoney = (value, fieldName) => {
   const parsedValue = Number(value);
 
@@ -28,14 +39,28 @@ const parseMoney = (value, fieldName) => {
   return Number(parsedValue.toFixed(2));
 };
 
-const validateOfrendaPayload = (payload) => ({
-  idSobre: parsePositiveInteger(payload.idSobre, 'El sobre'),
-  montoOfrenda: parseMoney(payload.montoOfrenda, 'El monto de ofrenda'),
-  idMoneda: parsePositiveInteger(payload.idMoneda, 'La moneda'),
-});
+const validateOfrendaPayload = async (payload) => {
+  const conversion = await convertMoneyToUsd({
+    amount: parseMoney(payload.montoOfrenda, 'El monto de ofrenda'),
+    idMoneda: parseCurrency(payload.idMoneda, 'La moneda'),
+  });
+
+  return {
+    idSobre: parsePositiveInteger(payload.idSobre, 'El sobre'),
+    montoOfrenda: conversion.amountUsd,
+    idMoneda: conversion.usdCurrencyId,
+    montoOfrendaOriginal: conversion.originalAmount,
+    idMonedaOriginal: conversion.originalCurrencyId,
+    tasaBcvDolar: conversion.tasaBcvDolar,
+  };
+};
 
 export const getOfrendas = async () => {
   return findAllOfrendas();
+};
+
+export const getOfrendasByIglesia = async (idIglesia) => {
+  return findAllOfrendas({ idIglesia: parsePositiveInteger(idIglesia, 'La iglesia') });
 };
 
 export const getOfrendaById = async (idOfrenda) => {
@@ -53,12 +78,12 @@ export const getOfrendasBySobre = async (idSobre) => {
 };
 
 export const registerOfrenda = async (payload) => {
-  const ofrendaData = validateOfrendaPayload(payload);
+  const ofrendaData = await validateOfrendaPayload(payload);
   return createOfrenda(ofrendaData);
 };
 
 export const editOfrenda = async (idOfrenda, payload) => {
-  const ofrendaData = validateOfrendaPayload(payload);
+  const ofrendaData = await validateOfrendaPayload(payload);
   const ofrenda = await updateOfrenda(
     parsePositiveInteger(idOfrenda, 'El id de la ofrenda'),
     ofrendaData,
