@@ -1,6 +1,13 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppField from '@/components/ui/AppField.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import AppPanel from '@/components/ui/AppPanel.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import PageActions from '@/components/ui/PageActions.vue'
 import { getMonedas } from '@/services/catalogos.service'
 import { createOfrenda, getOfrendas } from '@/services/ofrendas.service'
 import { getSobres } from '@/services/sobres.service'
@@ -9,7 +16,7 @@ const ofrendas = ref([])
 const sobres = ref([])
 const monedas = ref([])
 const error = ref('')
-const status = ref('')
+const toast = useToast()
 
 const form = reactive({
   idSobre: '',
@@ -45,21 +52,30 @@ const loadData = async () => {
 }
 
 const submitForm = async () => {
-  status.value = ''
   error.value = ''
 
   try {
     await createOfrenda({
       idSobre: Number(form.idSobre),
       montoOfrenda: Number(form.montoOfrenda),
-      idMoneda: Number(form.idMoneda),
+      idMoneda: form.idMoneda,
     })
 
-    status.value = 'Ofrenda registrada correctamente.'
+    toast.add({
+      severity: 'success',
+      summary: 'Ofrenda registrada',
+      life: 2600,
+    })
     form.montoOfrenda = ''
     await loadData()
   } catch (err) {
     error.value = err.message
+    toast.add({
+      severity: 'error',
+      summary: 'No se pudo registrar',
+      detail: err.message,
+      life: 3600,
+    })
   }
 }
 
@@ -68,49 +84,38 @@ onMounted(loadData)
 
 <template>
   <section class="page">
-    <div class="page-actions">
-      <button class="btn btn-secondary" type="button" @click="loadData">Actualizar</button>
-    </div>
+    <PageActions>
+      <AppButton variant="secondary" @click="loadData">Actualizar</AppButton>
+    </PageActions>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Nueva ofrenda</h3>
-      </div>
+    <AppPanel title="Nueva ofrenda">
       <form class="panel-body form-grid" @submit.prevent="submitForm">
-        <div class="field">
-          <label for="sobre">Sobre</label>
-          <select id="sobre" v-model="form.idSobre" class="control" required>
-            <option v-for="sobre in sobres" :key="sobre.idSobre" :value="sobre.idSobre">
-              {{ sobre.numeroSobre }} - {{ sobre.nombreMiembro }}
-            </option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="monto">Monto</label>
-          <input id="monto" v-model="form.montoOfrenda" class="control" min="0" step="0.01" type="number" required />
-        </div>
-        <div class="field">
-          <label for="moneda">Moneda</label>
-          <select id="moneda" v-model="form.idMoneda" class="control" required>
-            <option v-for="moneda in monedas" :key="moneda.idMoneda" :value="moneda.idMoneda">
-              {{ moneda.simbolo }} {{ moneda.nombreMoneda }}
-            </option>
-          </select>
-        </div>
+        <AppField id="sobre" label="Sobre">
+          <AppSelect id="sobre" v-model="form.idSobre" :options="sobres" option-label="nombreMiembro" option-value="idSobre">
+            <template #option="{ option }">{{ option.numeroSobre }} - {{ option.nombreMiembro }}</template>
+          </AppSelect>
+        </AppField>
+        <AppField id="monto" label="Monto">
+          <AppInput id="monto" v-model="form.montoOfrenda" type="number" min="0" step="0.01" required />
+        </AppField>
+        <AppField id="moneda" label="Moneda">
+          <AppSelect id="moneda" v-model="form.idMoneda" :options="monedas" option-label="nombreMoneda" option-value="idMoneda">
+            <template #option="{ option }">{{ option.simbolo }} {{ option.nombreMoneda }}</template>
+            <template #value="{ option, placeholder }">
+              {{ option ? `${option.simbolo} ${option.nombreMoneda}` : placeholder }}
+            </template>
+          </AppSelect>
+        </AppField>
         <div class="button-row">
-          <button class="btn btn-primary" type="submit">Registrar ofrenda</button>
+          <AppButton type="submit">Registrar ofrenda</AppButton>
         </div>
       </form>
-    </section>
+    </AppPanel>
 
     <p v-if="error" class="status status-error">{{ error }}</p>
-    <p v-else-if="status" class="status status-ok">{{ status }}</p>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Ofrendas registradas</h3>
-      </div>
+    <AppPanel title="Ofrendas registradas">
       <DataTable :columns="columns" :rows="ofrendas" empty-text="Aun no hay ofrendas registradas." />
-    </section>
+    </AppPanel>
   </section>
 </template>

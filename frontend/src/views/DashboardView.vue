@@ -2,6 +2,10 @@
 import { onMounted, ref } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import StatCard from '@/components/StatCard.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppPanel from '@/components/ui/AppPanel.vue'
+import PageActions from '@/components/ui/PageActions.vue'
+import { getConfiguracion } from '@/services/configuracion.service'
 import { getMiembros } from '@/services/miembros.service'
 import { getOfrendas } from '@/services/ofrendas.service'
 import { getReporteMensual } from '@/services/reportes.service'
@@ -15,12 +19,13 @@ const sobres = ref([])
 const ofrendas = ref([])
 const transferencias = ref([])
 const reporteMensual = ref({ totals: { totalGeneral: 0 }, items: [] })
+const simboloMoneda = ref('Bs')
 
 const currentDate = new Date()
 const currentMonth = currentDate.getMonth() + 1
 const currentYear = currentDate.getFullYear()
 
-const money = (value) => `Bs ${Number(value || 0).toLocaleString('es-VE', {
+const money = (value) => `${simboloMoneda.value} ${Number(value || 0).toLocaleString('es-VE', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })}`
@@ -37,8 +42,9 @@ const loadDashboard = async () => {
   error.value = ''
 
   try {
-    const [miembrosData, sobresData, ofrendasData, transferenciasData, reporteData] =
+    const [configuracionData, miembrosData, sobresData, ofrendasData, transferenciasData, reporteData] =
       await Promise.all([
+        getConfiguracion(),
         getMiembros(),
         getSobres(),
         getOfrendas(),
@@ -46,6 +52,7 @@ const loadDashboard = async () => {
         getReporteMensual({ mes: currentMonth, anio: currentYear }),
       ])
 
+    simboloMoneda.value = configuracionData.simboloMonedaPrincipal
     miembros.value = miembrosData
     sobres.value = sobresData
     ofrendas.value = ofrendasData
@@ -63,9 +70,9 @@ onMounted(loadDashboard)
 
 <template>
   <section class="page">
-    <div class="page-actions">
-      <button class="btn btn-secondary" type="button" @click="loadDashboard">Actualizar</button>
-    </div>
+    <PageActions>
+      <AppButton variant="secondary" @click="loadDashboard">Actualizar</AppButton>
+    </PageActions>
 
     <p v-if="error" class="status status-error">{{ error }}</p>
     <p v-else-if="loading" class="status">Cargando informacion...</p>
@@ -88,15 +95,12 @@ onMounted(loadDashboard)
       />
     </div>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Movimiento mensual</h3>
-      </div>
+    <AppPanel title="Movimiento mensual">
       <DataTable
         :columns="columns"
         :rows="reporteMensual.items"
         empty-text="Aun no hay sobres para este mes."
       />
-    </section>
+    </AppPanel>
   </section>
 </template>

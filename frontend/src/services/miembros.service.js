@@ -1,6 +1,7 @@
 import { api } from '@/api/http'
+import { withIglesiaActiva } from './iglesia-activa.service'
 
-export const getMiembros = () => api.get('/miembros')
+export const getMiembros = () => api.get(withIglesiaActiva('/miembros'))
 
 export const createMiembro = (payload) => api.post('/miembros', payload)
 

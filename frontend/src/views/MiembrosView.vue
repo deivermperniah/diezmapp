@@ -1,7 +1,16 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useConfirm } from 'primevue/useconfirm'
+import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppField from '@/components/ui/AppField.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import AppPanel from '@/components/ui/AppPanel.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import PageActions from '@/components/ui/PageActions.vue'
 import { getIglesias } from '@/services/catalogos.service'
+import { getIglesiaActivaId } from '@/services/iglesia-activa.service'
 import {
   createMiembro,
   deleteMiembro,
@@ -12,9 +21,10 @@ import {
 const miembros = ref([])
 const iglesias = ref([])
 const loading = ref(false)
-const status = ref('')
 const error = ref('')
 const editingId = ref(null)
+const confirm = useConfirm()
+const toast = useToast()
 
 const form = reactive({
   nombre: '',
@@ -35,7 +45,7 @@ const resetForm = () => {
   editingId.value = null
   form.nombre = ''
   form.email = ''
-  form.idIglesia = iglesias.value[0]?.idIglesia || ''
+  form.idIglesia = getIglesiaActivaId() || iglesias.value[0]?.idIglesia || ''
 }
 
 const loadData = async () => {
@@ -48,7 +58,7 @@ const loadData = async () => {
     iglesias.value = iglesiasData
 
     if (!form.idIglesia) {
-      form.idIglesia = iglesiasData[0]?.idIglesia || ''
+      form.idIglesia = getIglesiaActivaId() || iglesiasData[0]?.idIglesia || ''
     }
   } catch (err) {
     error.value = err.message
@@ -58,28 +68,41 @@ const loadData = async () => {
 }
 
 const submitForm = async () => {
-  status.value = ''
   error.value = ''
 
   try {
-    const payload = {
+  const payload = {
       nombre: form.nombre,
       email: form.email || null,
-      idIglesia: Number(form.idIglesia),
+      idIglesia: Number(getIglesiaActivaId() || form.idIglesia),
     }
 
     if (isEditing.value) {
       await updateMiembro(editingId.value, payload)
-      status.value = 'Miembro actualizado correctamente.'
+      toast.add({
+        severity: 'success',
+        summary: 'Miembro actualizado',
+        life: 2600,
+      })
     } else {
       await createMiembro(payload)
-      status.value = 'Miembro registrado correctamente.'
+      toast.add({
+        severity: 'success',
+        summary: 'Miembro registrado',
+        life: 2600,
+      })
     }
 
     await loadData()
     resetForm()
   } catch (err) {
     error.value = err.message
+    toast.add({
+      severity: 'error',
+      summary: 'No se pudo guardar',
+      detail: err.message,
+      life: 3600,
+    })
   }
 }
 
@@ -90,17 +113,36 @@ const editRow = (row) => {
   form.idIglesia = row.idIglesia
 }
 
-const removeRow = async (row) => {
-  status.value = ''
-  error.value = ''
+const removeRow = (row) => {
+  confirm.require({
+    header: 'Eliminar miembro',
+    message: `Seguro que deseas eliminar a ${row.nombre}?`,
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: 'Cancelar',
+    acceptLabel: 'Eliminar',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      error.value = ''
 
-  try {
-    await deleteMiembro(row.idMiembro)
-    status.value = 'Miembro eliminado correctamente.'
-    await loadData()
-  } catch (err) {
-    error.value = err.message
-  }
+      try {
+        await deleteMiembro(row.idMiembro)
+        toast.add({
+          severity: 'success',
+          summary: 'Miembro eliminado',
+          life: 2600,
+        })
+        await loadData()
+      } catch (err) {
+        error.value = err.message
+        toast.add({
+          severity: 'error',
+          summary: 'No se pudo eliminar',
+          detail: err.message,
+          life: 3600,
+        })
+      }
+    },
+  })
 }
 
 onMounted(loadData)
@@ -108,59 +150,43 @@ onMounted(loadData)
 
 <template>
   <section class="page">
-    <div class="page-actions">
-      <button class="btn btn-secondary" type="button" @click="loadData">Actualizar</button>
-    </div>
+    <PageActions>
+      <AppButton variant="secondary" @click="loadData">Actualizar</AppButton>
+    </PageActions>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h3 class="panel-title">{{ isEditing ? 'Editar miembro' : 'Nuevo miembro' }}</h3>
-      </div>
+    <AppPanel :title="isEditing ? 'Editar miembro' : 'Nuevo miembro'">
       <form class="panel-body form-grid" @submit.prevent="submitForm">
-        <div class="field">
-          <label for="nombre">Nombre</label>
-          <input id="nombre" v-model="form.nombre" class="control" required />
-        </div>
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" v-model="form.email" class="control" type="email" />
-        </div>
-        <div class="field">
-          <label for="iglesia">Iglesia</label>
-          <select id="iglesia" v-model="form.idIglesia" class="control" required>
-            <option v-for="iglesia in iglesias" :key="iglesia.idIglesia" :value="iglesia.idIglesia">
-              {{ iglesia.nombreIglesia }}
-            </option>
-          </select>
-        </div>
+        <AppField id="nombre" label="Nombre">
+          <AppInput id="nombre" v-model="form.nombre" required />
+        </AppField>
+        <AppField id="email" label="Email">
+          <AppInput id="email" v-model="form.email" type="email" />
+        </AppField>
+        <AppField id="iglesia" label="Iglesia">
+          <AppSelect id="iglesia" v-model="form.idIglesia" :options="iglesias" option-label="nombreIglesia" option-value="idIglesia" />
+        </AppField>
         <div class="button-row">
-          <button class="btn btn-primary" type="submit">
+          <AppButton type="submit">
             {{ isEditing ? 'Guardar cambios' : 'Registrar miembro' }}
-          </button>
-          <button v-if="isEditing" class="btn btn-secondary" type="button" @click="resetForm">
-            Cancelar
-          </button>
+          </AppButton>
+          <AppButton v-if="isEditing" variant="secondary" @click="resetForm">Cancelar</AppButton>
         </div>
       </form>
-    </section>
+    </AppPanel>
 
     <p v-if="error" class="status status-error">{{ error }}</p>
-    <p v-else-if="status" class="status status-ok">{{ status }}</p>
     <p v-else-if="loading" class="status">Cargando miembros...</p>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Listado de miembros</h3>
-      </div>
+    <AppPanel title="Listado de miembros">
       <DataTable :columns="columns" :rows="miembros" empty-text="Aun no hay miembros registrados.">
         <template #actions="{ row }">
           <div class="button-row actions">
-            <button class="btn btn-secondary" type="button" @click="editRow(row)">Editar</button>
-            <button class="btn btn-danger" type="button" @click="removeRow(row)">Eliminar</button>
+            <AppButton variant="secondary" size="sm" @click="editRow(row)">Editar</AppButton>
+            <AppButton variant="danger" size="sm" @click="removeRow(row)">Eliminar</AppButton>
           </div>
         </template>
       </DataTable>
-    </section>
+    </AppPanel>
   </section>
 </template>
 

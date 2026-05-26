@@ -5,6 +5,8 @@ import AppTopbar from '@/components/AppTopbar.vue'
 
 <template>
   <div class="app-shell">
+    <PToast position="top-right" />
+    <PConfirmDialog />
     <AppSidebar />
     <div class="main-shell">
       <AppTopbar />

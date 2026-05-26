@@ -1,35 +1,75 @@
 <script setup>
-defineProps({
+import { computed, ref } from 'vue'
+import Column from 'primevue/column'
+import PrimeDataTable from 'primevue/datatable'
+
+const props = defineProps({
   columns: { type: Array, required: true },
   rows: { type: Array, default: () => [] },
   emptyText: { type: String, default: 'Sin registros para mostrar.' },
 })
+
+const search = ref('')
+
+const normalizedSearch = computed(() => search.value.trim().toLowerCase())
+
+const visibleRows = computed(() => {
+  if (!normalizedSearch.value) return props.rows
+
+  return props.rows.filter((row) =>
+    props.columns.some((column) =>
+      String(row[column.key] ?? '')
+        .toLowerCase()
+        .includes(normalizedSearch.value),
+    ),
+  )
+})
+
 </script>
 
 <template>
   <div class="table-wrap">
-    <table v-if="rows.length" class="data-table">
-      <thead>
-        <tr>
-          <th v-for="column in columns" :key="column.key">
-            {{ column.label }}
-          </th>
-          <th v-if="$slots.actions" class="actions-heading">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="row in rows" :key="row.id || row.idMiembro || row.idSobre || JSON.stringify(row)">
-          <td v-for="column in columns" :key="column.key">
-            {{ row[column.key] }}
-          </td>
-          <td v-if="$slots.actions" class="actions-cell">
-            <slot name="actions" :row="row" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <PToolbar v-if="rows.length" class="table-toolbar">
+      <template #start>
+        <strong>{{ visibleRows.length }} registros</strong>
+      </template>
+      <template #end>
+        <span class="search-field">
+          <i class="pi pi-search" />
+          <PInputText v-model="search" placeholder="Buscar" />
+        </span>
+      </template>
+    </PToolbar>
 
-    <div v-else class="empty-state">{{ emptyText }}</div>
+    <PrimeDataTable
+      v-if="visibleRows.length"
+      :value="visibleRows"
+      class="app-data-table"
+      paginator
+      :rows="8"
+      :rows-per-page-options="[8, 15, 30]"
+      paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+      current-page-report-template="{first}-{last} de {totalRecords}"
+      size="small"
+      striped-rows
+      table-style="min-width: 720px"
+    >
+      <Column
+        v-for="column in columns"
+        :key="column.key"
+        :field="column.key"
+        :header="column.label"
+        sortable
+      />
+      <Column v-if="$slots.actions" header="Acciones" body-class="actions-cell">
+        <template #body="{ data }">
+          <slot name="actions" :row="data" />
+        </template>
+      </Column>
+    </PrimeDataTable>
+
+    <div v-else class="empty-state">{{ search ? 'Sin resultados para la busqueda.' : emptyText }}</div>
+
   </div>
 </template>
 
@@ -39,41 +79,40 @@ defineProps({
   overflow-x: auto;
 }
 
-.data-table {
-  width: 100%;
-  min-width: 720px;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 13px 14px;
+.table-toolbar {
+  border: 0;
   border-bottom: 1px solid var(--color-line);
-  text-align: left;
-  vertical-align: middle;
+  border-radius: 0;
+  padding: 12px 14px;
+  background: #fff;
 }
 
-th {
+.search-field {
+  position: relative;
+  display: block;
+  width: 260px;
+}
+
+.search-field i {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  z-index: 1;
   color: var(--color-muted);
-  background: var(--color-surface-muted);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  transform: translateY(-50%);
 }
 
-td {
-  color: var(--color-ink);
-  font-weight: 650;
+.search-field :deep(.p-inputtext) {
+  padding-left: 36px;
 }
 
-tr:last-child td {
-  border-bottom: 0;
+.app-data-table {
+  overflow: hidden;
 }
 
-.actions-heading,
-.actions-cell {
-  width: 190px;
-  text-align: right;
+@media (max-width: 720px) {
+  .search-field {
+    width: 100%;
+  }
 }
 </style>

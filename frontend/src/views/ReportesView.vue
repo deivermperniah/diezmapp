@@ -2,6 +2,12 @@
 import { onMounted, reactive, ref } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import StatCard from '@/components/StatCard.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppField from '@/components/ui/AppField.vue'
+import AppInput from '@/components/ui/AppInput.vue'
+import AppPanel from '@/components/ui/AppPanel.vue'
+import PageActions from '@/components/ui/PageActions.vue'
+import { getConfiguracion } from '@/services/configuracion.service'
 import { getReporteMensual, getReporteSemanal } from '@/services/reportes.service'
 
 const today = new Date().toISOString().slice(0, 10)
@@ -26,8 +32,9 @@ const mensual = ref({
   },
 })
 const error = ref('')
+const simboloMoneda = ref('Bs')
 
-const money = (value) => `Bs ${Number(value || 0).toLocaleString('es-VE', {
+const money = (value) => `${simboloMoneda.value} ${Number(value || 0).toLocaleString('es-VE', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })}`
@@ -51,7 +58,8 @@ const mensualColumns = [
 const loadReportes = async () => {
   error.value = ''
   try {
-    const [semanalData, mensualData] = await Promise.all([
+    const [configuracionData, semanalData, mensualData] = await Promise.all([
+      getConfiguracion(),
       getReporteSemanal({
         fechaInicio: filtros.fechaInicio,
         fechaFin: filtros.fechaFin,
@@ -61,6 +69,7 @@ const loadReportes = async () => {
         anio: filtros.anio,
       }),
     ])
+    simboloMoneda.value = configuracionData.simboloMonedaPrincipal
     semanal.value = semanalData
     mensual.value = mensualData
   } catch (err) {
@@ -73,9 +82,9 @@ onMounted(loadReportes)
 
 <template>
   <section class="page">
-    <div class="page-actions">
-      <button class="btn btn-secondary" type="button" @click="loadReportes">Actualizar</button>
-    </div>
+    <PageActions>
+      <AppButton variant="secondary" @click="loadReportes">Actualizar</AppButton>
+    </PageActions>
 
     <p v-if="error" class="status status-error">{{ error }}</p>
 
@@ -91,45 +100,37 @@ onMounted(loadReportes)
       />
     </div>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Reporte semanal</h3>
-      </div>
+    <AppPanel title="Reporte semanal">
       <form class="panel-body form-grid" @submit.prevent="loadReportes">
-        <div class="field">
-          <label for="inicio">Inicio</label>
-          <input id="inicio" v-model="filtros.fechaInicio" class="control" type="date" />
-        </div>
-        <div class="field">
-          <label for="fin">Fin</label>
-          <input id="fin" v-model="filtros.fechaFin" class="control" type="date" />
-        </div>
+        <AppField id="inicio" label="Inicio">
+          <AppInput id="inicio" v-model="filtros.fechaInicio" type="date" />
+        </AppField>
+        <AppField id="fin" label="Fin">
+          <AppInput id="fin" v-model="filtros.fechaFin" type="date" />
+        </AppField>
         <div class="button-row">
-          <button class="btn btn-primary" type="submit">Consultar</button>
+          <AppButton type="submit">Consultar</AppButton>
         </div>
       </form>
       <DataTable :columns="semanalColumns" :rows="semanal.items" empty-text="Sin datos semanales." />
-    </section>
+    </AppPanel>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Reporte mensual</h3>
+    <AppPanel title="Reporte mensual">
+      <template #actions>
         <strong>{{ money(mensual.totals.totalGeneral) }}</strong>
-      </div>
+      </template>
       <form class="panel-body form-grid" @submit.prevent="loadReportes">
-        <div class="field">
-          <label for="mes">Mes</label>
-          <input id="mes" v-model="filtros.mes" class="control" min="1" max="12" type="number" />
-        </div>
-        <div class="field">
-          <label for="anio">Anio</label>
-          <input id="anio" v-model="filtros.anio" class="control" min="2000" type="number" />
-        </div>
+        <AppField id="mes" label="Mes">
+          <AppInput id="mes" v-model="filtros.mes" type="number" min="1" max="12" />
+        </AppField>
+        <AppField id="anio" label="Anio">
+          <AppInput id="anio" v-model="filtros.anio" type="number" min="2000" />
+        </AppField>
         <div class="button-row">
-          <button class="btn btn-primary" type="submit">Consultar</button>
+          <AppButton type="submit">Consultar</AppButton>
         </div>
       </form>
       <DataTable :columns="mensualColumns" :rows="mensual.items" empty-text="Sin datos mensuales." />
-    </section>
+    </AppPanel>
   </section>
 </template>

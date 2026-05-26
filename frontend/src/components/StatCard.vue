@@ -7,24 +7,34 @@ defineProps({
 </script>
 
 <template>
-  <article class="stat-card">
-    <span>{{ label }}</span>
-    <strong>{{ value }}</strong>
-    <small v-if="detail">{{ detail }}</small>
-  </article>
+  <PCard class="stat-card">
+    <template #content>
+      <span>{{ label }}</span>
+      <strong>{{ value }}</strong>
+      <small v-if="detail">{{ detail }}</small>
+    </template>
+  </PCard>
 </template>
 
 <style scoped>
 .stat-card {
-  display: grid;
   min-height: 132px;
-  align-content: space-between;
-  gap: 14px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
-  background: var(--color-surface);
-  padding: 18px;
   box-shadow: var(--shadow-sm);
+}
+
+.stat-card :deep(.p-card-body),
+.stat-card :deep(.p-card-content) {
+  height: 100%;
+  padding: 0;
+}
+
+.stat-card :deep(.p-card-content) {
+  display: grid;
+  align-content: space-between;
+  gap: 14px;
+  padding: 18px;
 }
 
 span {
