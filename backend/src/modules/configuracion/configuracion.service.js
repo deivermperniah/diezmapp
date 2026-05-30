@@ -1,4 +1,5 @@
 import { AppError } from '../../utils/app-error.js';
+import { getTasaDolarOficial } from '../../services/currency.service.js';
 import { findConfiguracion, updateConfiguracion } from './configuracion.repository.js';
 
 const parseRequiredText = (value, fieldName) => {
@@ -20,6 +21,8 @@ export const getConfiguracion = async () => {
 
   return configuracion;
 };
+
+export const getTasaDolar = async () => getTasaDolarOficial();
 
 export const saveConfiguracion = async (payload) => {
   const configuracionData = {

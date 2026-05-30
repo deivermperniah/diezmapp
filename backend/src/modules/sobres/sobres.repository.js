@@ -90,6 +90,8 @@ export const createSobre = async ({
   idMonedaPactoOriginal,
   tasaBcvPacto,
   totalIncluido,
+  ofrendas = [],
+  transferencias = [],
 }) => {
   const client = await pool.connect();
 
@@ -151,10 +153,63 @@ export const createSobre = async ({
         totalIncluido,
       ],
     );
+    const idSobre = insertResult.rows[0].idSobre;
+
+    for (const ofrenda of ofrendas) {
+      await client.query(
+        `
+          INSERT INTO OFRENDA_COLABORACION (
+            Id_Sobre,
+            Monto_Ofrenda,
+            Id_Moneda,
+            Monto_Ofrenda_Original,
+            Id_Moneda_Original,
+            Tasa_Bcv_Dolar
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `,
+        [
+          idSobre,
+          ofrenda.montoOfrenda,
+          ofrenda.idMoneda,
+          ofrenda.montoOfrendaOriginal,
+          ofrenda.idMonedaOriginal,
+          ofrenda.tasaBcvDolar,
+        ],
+      );
+    }
+
+    for (const transferencia of transferencias) {
+      await client.query(
+        `
+          INSERT INTO TRANSFERENCIA (
+            Id_Sobre,
+            Fecha_Transferencia,
+            Numero_Transferencia,
+            Banco_Receptor_Cuenta,
+            Monto_Transferencia,
+            Monto_Transferencia_Original,
+            Id_Moneda_Original,
+            Tasa_Bcv_Dolar
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `,
+        [
+          idSobre,
+          transferencia.fechaTransferencia,
+          transferencia.numeroTransferencia,
+          transferencia.bancoReceptorCuenta,
+          transferencia.montoTransferencia,
+          transferencia.montoTransferenciaOriginal,
+          transferencia.idMonedaOriginal,
+          transferencia.tasaBcvDolar,
+        ],
+      );
+    }
 
     await client.query('COMMIT');
 
-    return findSobreById(insertResult.rows[0].idSobre);
+    return findSobreById(idSobre);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -182,66 +237,152 @@ export const updateSobre = async (
     idMonedaPactoOriginal,
     tasaBcvPacto,
     totalIncluido,
+    ofrendas = [],
+    transferencias = [],
   },
 ) => {
-  const result = await query(
-    `
-      UPDATE SOBRE
-      SET
-        Fecha = $1,
-        Mes = $2,
-        Anio = $3,
-        Id_Iglesia = $4,
-        Id_Miembro = $5,
-        Monto_Diezmo = $6,
-        Id_Moneda_Diezmo = $7,
-        Monto_Diezmo_Original = $8,
-        Id_Moneda_Diezmo_Original = $9,
-        Tasa_Bcv_Diezmo = $10,
-        Monto_Pacto_Amor = $11,
-        Id_Moneda_Pacto = $12,
-        Monto_Pacto_Amor_Original = $13,
-        Id_Moneda_Pacto_Original = $14,
-        Tasa_Bcv_Pacto = $15,
-        Total_Incluido = $16
-      WHERE Id_Sobre = $17
-      RETURNING Id_Sobre AS "idSobre"
-    `,
-    [
-      fecha,
-      mes,
-      anio,
-      idIglesia,
-      idMiembro,
-      montoDiezmo,
-      idMonedaDiezmo,
-      montoDiezmoOriginal,
-      idMonedaDiezmoOriginal,
-      tasaBcvDiezmo,
-      montoPactoAmor,
-      idMonedaPacto,
-      montoPactoAmorOriginal,
-      idMonedaPactoOriginal,
-      tasaBcvPacto,
-      totalIncluido,
-      idSobre,
-    ],
-  );
+  const client = await pool.connect();
 
-  if (!result.rows[0]) return null;
+  try {
+    await client.query('BEGIN');
 
-  return findSobreById(result.rows[0].idSobre);
+    const result = await client.query(
+      `
+        UPDATE SOBRE
+        SET
+          Fecha = $1,
+          Mes = $2,
+          Anio = $3,
+          Id_Iglesia = $4,
+          Id_Miembro = $5,
+          Monto_Diezmo = $6,
+          Id_Moneda_Diezmo = $7,
+          Monto_Diezmo_Original = $8,
+          Id_Moneda_Diezmo_Original = $9,
+          Tasa_Bcv_Diezmo = $10,
+          Monto_Pacto_Amor = $11,
+          Id_Moneda_Pacto = $12,
+          Monto_Pacto_Amor_Original = $13,
+          Id_Moneda_Pacto_Original = $14,
+          Tasa_Bcv_Pacto = $15,
+          Total_Incluido = $16
+        WHERE Id_Sobre = $17
+        RETURNING Id_Sobre AS "idSobre"
+      `,
+      [
+        fecha,
+        mes,
+        anio,
+        idIglesia,
+        idMiembro,
+        montoDiezmo,
+        idMonedaDiezmo,
+        montoDiezmoOriginal,
+        idMonedaDiezmoOriginal,
+        tasaBcvDiezmo,
+        montoPactoAmor,
+        idMonedaPacto,
+        montoPactoAmorOriginal,
+        idMonedaPactoOriginal,
+        tasaBcvPacto,
+        totalIncluido,
+        idSobre,
+      ],
+    );
+
+    if (!result.rows[0]) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+
+    await client.query('DELETE FROM OFRENDA_COLABORACION WHERE Id_Sobre = $1', [idSobre]);
+    await client.query('DELETE FROM TRANSFERENCIA WHERE Id_Sobre = $1', [idSobre]);
+
+    for (const ofrenda of ofrendas) {
+      await client.query(
+        `
+          INSERT INTO OFRENDA_COLABORACION (
+            Id_Sobre,
+            Monto_Ofrenda,
+            Id_Moneda,
+            Monto_Ofrenda_Original,
+            Id_Moneda_Original,
+            Tasa_Bcv_Dolar
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `,
+        [
+          idSobre,
+          ofrenda.montoOfrenda,
+          ofrenda.idMoneda,
+          ofrenda.montoOfrendaOriginal,
+          ofrenda.idMonedaOriginal,
+          ofrenda.tasaBcvDolar,
+        ],
+      );
+    }
+
+    for (const transferencia of transferencias) {
+      await client.query(
+        `
+          INSERT INTO TRANSFERENCIA (
+            Id_Sobre,
+            Fecha_Transferencia,
+            Numero_Transferencia,
+            Banco_Receptor_Cuenta,
+            Monto_Transferencia,
+            Monto_Transferencia_Original,
+            Id_Moneda_Original,
+            Tasa_Bcv_Dolar
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `,
+        [
+          idSobre,
+          transferencia.fechaTransferencia,
+          transferencia.numeroTransferencia,
+          transferencia.bancoReceptorCuenta,
+          transferencia.montoTransferencia,
+          transferencia.montoTransferenciaOriginal,
+          transferencia.idMonedaOriginal,
+          transferencia.tasaBcvDolar,
+        ],
+      );
+    }
+
+    await client.query('COMMIT');
+
+    return findSobreById(idSobre);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 export const deleteSobre = async (idSobre) => {
-  const result = await query(
-    `
-      DELETE FROM SOBRE
-      WHERE Id_Sobre = $1
-      RETURNING Id_Sobre AS "idSobre"
-    `,
-    [idSobre],
-  );
+  const client = await pool.connect();
 
-  return result.rows[0] || null;
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM TRANSFERENCIA WHERE Id_Sobre = $1', [idSobre]);
+    await client.query('DELETE FROM OFRENDA_COLABORACION WHERE Id_Sobre = $1', [idSobre]);
+    const result = await client.query(
+      `
+        DELETE FROM SOBRE
+        WHERE Id_Sobre = $1
+        RETURNING Id_Sobre AS "idSobre"
+      `,
+      [idSobre],
+    );
+    await client.query('COMMIT');
+
+    return result.rows[0] || null;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };

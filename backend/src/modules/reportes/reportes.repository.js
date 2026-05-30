@@ -9,7 +9,7 @@ export const findReporteSemanal = async ({ fechaInicio, fechaFin, idIglesia }) =
         TO_CHAR(s.Fecha, 'YYYY-MM-DD') AS "fecha",
         s.Total_Incluido::FLOAT AS "totalIncluido",
         COALESCE(o.Total_Ofrendas, 0)::FLOAT AS "totalOfrendas",
-        (s.Total_Incluido + COALESCE(o.Total_Ofrendas, 0))::FLOAT AS "totalSobre"
+        s.Total_Incluido::FLOAT AS "totalSobre"
       FROM SOBRE s
       INNER JOIN MIEMBRO m ON m.Id_Miembro = s.Id_Miembro
       LEFT JOIN (

@@ -1,184 +1,124 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import ContributionFormDialog from '@/components/ContributionFormDialog.vue'
 import DataTable from '@/components/DataTable.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import AppField from '@/components/ui/AppField.vue'
-import AppInput from '@/components/ui/AppInput.vue'
-import AppPanel from '@/components/ui/AppPanel.vue'
-import AppSelect from '@/components/ui/AppSelect.vue'
-import PageActions from '@/components/ui/PageActions.vue'
-import { getMonedas } from '@/services/catalogos.service'
-import { getMiembros } from '@/services/miembros.service'
-import { createOfrenda, getOfrendas } from '@/services/ofrendas.service'
-import { getIglesiaActivaId } from '@/services/iglesia-activa.service'
+import MemberFormDialog from '@/components/MemberFormDialog.vue'
+import { getIglesias, getMonedas } from '@/services/catalogos.service'
+import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
+import { createMiembro, getMiembros } from '@/services/miembros.service'
 import { createSobre, getSiguienteNumeroSobre, getSobres } from '@/services/sobres.service'
-import {
-  createTransferencia,
-  getTransferencias,
-} from '@/services/transferencias.service'
+import { withMinimumDelay } from '@/utils/loading'
 
 const today = new Date().toISOString().slice(0, 10)
-const sobres = ref([])
-const ofrendas = ref([])
-const transferencias = ref([])
 const miembros = ref([])
 const monedas = ref([])
+const iglesias = ref([])
+const sobres = ref([])
 const siguiente = ref(null)
-const error = ref('')
+const dialogVisible = ref(false)
+const memberDialogVisible = ref(false)
 const saving = ref(false)
+const savingMember = ref(false)
+const loading = ref(false)
 const toast = useToast()
 
-const form = reactive({
-  fecha: today,
-  idMiembro: '',
-  montoDiezmo: '',
-  idMonedaDiezmo: '',
-  montoPactoAmor: '',
-  idMonedaPacto: '',
-  montoOfrenda: '',
-  idMonedaOfrenda: '',
-  fechaTransferencia: today,
-  numeroTransferencia: '',
-  bancoReceptorCuenta: '',
-  montoTransferencia: '',
-  idMonedaTransferencia: '',
-})
-
-const sobreColumns = [
+const columns = [
   { key: 'numeroSobre', label: 'Sobre' },
   { key: 'fecha', label: 'Fecha' },
   { key: 'nombreMiembro', label: 'Miembro' },
   { key: 'montoDiezmo', label: 'Diezmo' },
   { key: 'montoPactoAmor', label: 'Pacto amor' },
-  { key: 'totalIncluido', label: 'Total incluido' },
+  { key: 'totalIncluido', label: 'Total' },
 ]
 
-const ofrendaColumns = [
-  { key: 'numeroSobre', label: 'Sobre' },
-  { key: 'fechaSobre', label: 'Fecha' },
-  { key: 'nombreMiembro', label: 'Miembro' },
-  { key: 'montoOfrenda', label: 'Ofrenda' },
-  { key: 'simboloMoneda', label: 'Moneda' },
-]
+const loadData = async ({ showLoading = true } = {}) => {
+  if (showLoading) {
+    loading.value = true
+  }
 
-const transferenciaColumns = [
-  { key: 'numeroSobre', label: 'Sobre' },
-  { key: 'fechaTransferencia', label: 'Fecha' },
-  { key: 'nombreMiembro', label: 'Miembro' },
-  { key: 'numeroTransferencia', label: 'Operacion' },
-  { key: 'bancoReceptorCuenta', label: 'Cuenta' },
-  { key: 'montoTransferencia', label: 'Monto' },
-  { key: 'simboloMonedaOriginal', label: 'Moneda original' },
-]
-
-const hasValue = (value) => String(value ?? '').trim() !== ''
-
-const hasPositiveAmount = (value) => {
-  const amount = Number(value)
-  return !Number.isNaN(amount) && amount > 0
-}
-
-const hasOfrenda = () => hasPositiveAmount(form.montoOfrenda)
-
-const hasTransferencia = () =>
-  hasValue(form.numeroTransferencia) ||
-  hasValue(form.bancoReceptorCuenta) ||
-  hasPositiveAmount(form.montoTransferencia)
-
-const loadData = async () => {
-  error.value = ''
   try {
-    const [sobresData, ofrendasData, transferenciasData, miembrosData, monedasData] = await Promise.all([
-      getSobres(),
-      getOfrendas(),
-      getTransferencias(),
+    const loader = () => Promise.all([
       getMiembros(),
       getMonedas(),
+      getIglesias(),
+      getSobres(),
     ])
-
-    sobres.value = sobresData
-    ofrendas.value = ofrendasData
-    transferencias.value = transferenciasData
+    const [miembrosData, monedasData, iglesiasData, sobresData] = await (showLoading ? withMinimumDelay(loader) : loader())
     miembros.value = miembrosData
     monedas.value = monedasData
-    form.idMiembro ||= miembrosData[0]?.idMiembro || ''
-    form.idMonedaDiezmo ||= monedasData[0]?.idMoneda || ''
-    form.idMonedaPacto ||= monedasData[0]?.idMoneda || ''
-    form.idMonedaOfrenda ||= monedasData[0]?.idMoneda || ''
-    form.idMonedaTransferencia ||= monedasData[0]?.idMoneda || ''
-    await loadSiguiente()
+    iglesias.value = iglesiasData
+    sobres.value = sobresData
+    await loadSiguiente(today)
   } catch (err) {
-    error.value = err.message
+    toast.add({
+      severity: 'error',
+      summary: 'No se pudo cargar la información',
+      detail: err.message,
+      life: 3600,
+    })
+  } finally {
+    if (showLoading) {
+      loading.value = false
+    }
   }
 }
 
-const loadSiguiente = async () => {
-  if (!form.fecha) return
-  siguiente.value = await getSiguienteNumeroSobre(form.fecha)
+const loadSiguiente = async (fecha = today) => {
+  if (!fecha) return
+  siguiente.value = await getSiguienteNumeroSobre(fecha)
 }
 
-const handleFechaChange = async () => {
-  if (!hasTransferencia()) {
-    form.fechaTransferencia = form.fecha
-  }
-
-  await loadSiguiente()
-}
-
-const submitForm = async () => {
-  error.value = ''
-  saving.value = true
+const saveMember = async (payload) => {
+  savingMember.value = true
 
   try {
-    const sobre = await createSobre({
+    await createMiembro({
+      ...payload,
+      idIglesia: Number(getIglesiaActivaId() || payload.idIglesia),
+    })
+    toast.add({ severity: 'success', summary: 'Miembro registrado', life: 2600 })
+    memberDialogVisible.value = false
+    miembros.value = await getMiembros()
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'No se pudo guardar el miembro',
+      detail: err.message,
+      life: 3600,
+    })
+  } finally {
+    savingMember.value = false
+  }
+}
+
+const saveContribution = async (form) => {
+  saving.value = true
+  try {
+    await createSobre({
       fecha: form.fecha,
       idIglesia: Number(getIglesiaActivaId()),
       idMiembro: Number(form.idMiembro),
-      montoDiezmo: Number(form.montoDiezmo),
+      montoDiezmo: Number(form.montoDiezmo || 0),
       idMonedaDiezmo: form.idMonedaDiezmo,
       montoPactoAmor: Number(form.montoPactoAmor || 0),
-      idMonedaPacto: form.idMonedaPacto,
+      idMonedaPacto: form.idMonedaPacto || form.idMonedaDiezmo,
+      ofrendas: form.ofrendas,
+      transferencias: form.transferencias,
     })
-
-    if (hasOfrenda()) {
-      await createOfrenda({
-        idSobre: Number(sobre.idSobre),
-        montoOfrenda: Number(form.montoOfrenda),
-        idMoneda: form.idMonedaOfrenda,
-      })
-    }
-
-    if (hasTransferencia()) {
-      await createTransferencia({
-        idSobre: Number(sobre.idSobre),
-        fechaTransferencia: form.fechaTransferencia,
-        numeroTransferencia: form.numeroTransferencia,
-        bancoReceptorCuenta: form.bancoReceptorCuenta,
-        montoTransferencia: Number(form.montoTransferencia),
-        idMoneda: form.idMonedaTransferencia,
-      })
-    }
 
     toast.add({
       severity: 'success',
       summary: 'Sobre registrado',
-      detail: 'El sobre y sus movimientos fueron guardados.',
+      detail: 'El registro fue guardado correctamente.',
       life: 2600,
     })
-    form.montoDiezmo = ''
-    form.montoPactoAmor = ''
-    form.montoOfrenda = ''
-    form.numeroTransferencia = ''
-    form.bancoReceptorCuenta = ''
-    form.montoTransferencia = ''
-    form.fechaTransferencia = form.fecha
-    await loadData()
+    dialogVisible.value = false
+    await loadData({ showLoading: false })
   } catch (err) {
-    error.value = err.message
     toast.add({
       severity: 'error',
-      summary: 'No se pudo registrar',
+      summary: 'No se pudo guardar',
       detail: err.message,
       life: 3600,
     })
@@ -188,149 +128,42 @@ const submitForm = async () => {
 }
 
 onMounted(loadData)
+watch(iglesiaActivaId, loadData)
 </script>
 
 <template>
   <section class="page">
-    <PageActions>
-      <AppButton variant="secondary" @click="loadData">Actualizar</AppButton>
-    </PageActions>
+    <ContributionFormDialog
+      v-model:visible="dialogVisible"
+      :miembros="miembros"
+      :monedas="monedas"
+      :siguiente="siguiente"
+      :saving="saving"
+      @date-change="loadSiguiente"
+      @create-member="memberDialogVisible = true"
+      @save="saveContribution"
+    />
 
-    <AppPanel title="Nuevo sobre">
-      <template #actions>
-        <strong v-if="siguiente">Siguiente: {{ siguiente.siguienteNumero }}</strong>
+    <MemberFormDialog
+      v-model:visible="memberDialogVisible"
+      :iglesias="iglesias"
+      :default-iglesia="getIglesiaActivaId()"
+      :saving="savingMember"
+      @save="saveMember"
+    />
+
+    <DataTable
+      :columns="columns"
+      :rows="sobres"
+      :loading="loading"
+      empty-text="Aun no hay sobres registrados."
+    >
+      <template #toolbarStart>
+        <div class="button-row">
+          <PButton icon="pi pi-refresh" severity="secondary" outlined :loading="loading" @click="loadData" />
+          <PButton label="Nuevo sobre" icon="pi pi-plus" @click="dialogVisible = true" />
+        </div>
       </template>
-      <form class="panel-body form-grid" @submit.prevent="submitForm">
-        <div class="form-section">
-          <h4>Sobre</h4>
-          <div class="form-grid">
-            <AppField id="fecha" label="Fecha">
-              <AppInput id="fecha" v-model="form.fecha" type="date" @change="handleFechaChange" />
-            </AppField>
-            <AppField id="miembro" label="Miembro">
-              <AppSelect id="miembro" v-model="form.idMiembro" :options="miembros" option-label="nombre" option-value="idMiembro" />
-            </AppField>
-            <AppField id="diezmo" label="Monto diezmo">
-              <AppInput id="diezmo" v-model="form.montoDiezmo" type="number" min="0" step="0.01" required />
-            </AppField>
-            <AppField id="monedaDiezmo" label="Moneda diezmo">
-              <AppSelect id="monedaDiezmo" v-model="form.idMonedaDiezmo" :options="monedas" option-label="nombreMoneda" option-value="idMoneda">
-                <template #option="{ option }">{{ option.simbolo }} {{ option.nombreMoneda }}</template>
-                <template #value="{ option, placeholder }">
-                  {{ option ? `${option.simbolo} ${option.nombreMoneda}` : placeholder }}
-                </template>
-              </AppSelect>
-            </AppField>
-            <AppField id="pacto" label="Monto pacto amor">
-              <AppInput id="pacto" v-model="form.montoPactoAmor" type="number" min="0" step="0.01" />
-            </AppField>
-            <AppField id="monedaPacto" label="Moneda pacto">
-              <AppSelect id="monedaPacto" v-model="form.idMonedaPacto" :options="monedas" option-label="nombreMoneda" option-value="idMoneda">
-                <template #option="{ option }">{{ option.simbolo }} {{ option.nombreMoneda }}</template>
-                <template #value="{ option, placeholder }">
-                  {{ option ? `${option.simbolo} ${option.nombreMoneda}` : placeholder }}
-                </template>
-              </AppSelect>
-            </AppField>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h4>Ofrenda adicional</h4>
-          <div class="form-grid">
-            <AppField id="ofrenda" label="Monto ofrenda">
-              <AppInput id="ofrenda" v-model="form.montoOfrenda" type="number" min="0" step="0.01" />
-            </AppField>
-            <AppField id="monedaOfrenda" label="Moneda ofrenda">
-              <AppSelect id="monedaOfrenda" v-model="form.idMonedaOfrenda" :options="monedas" option-label="nombreMoneda" option-value="idMoneda">
-                <template #option="{ option }">{{ option.simbolo }} {{ option.nombreMoneda }}</template>
-                <template #value="{ option, placeholder }">
-                  {{ option ? `${option.simbolo} ${option.nombreMoneda}` : placeholder }}
-                </template>
-              </AppSelect>
-            </AppField>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h4>Transferencia</h4>
-          <div class="form-grid">
-            <AppField id="fechaTransferencia" label="Fecha transferencia">
-              <AppInput id="fechaTransferencia" v-model="form.fechaTransferencia" type="date" />
-            </AppField>
-            <AppField id="numeroTransferencia" label="Numero transferencia">
-              <AppInput id="numeroTransferencia" v-model="form.numeroTransferencia" />
-            </AppField>
-            <AppField id="cuentaTransferencia" label="Banco o cuenta">
-              <AppInput id="cuentaTransferencia" v-model="form.bancoReceptorCuenta" />
-            </AppField>
-            <AppField id="montoTransferencia" label="Monto transferencia">
-              <AppInput id="montoTransferencia" v-model="form.montoTransferencia" type="number" min="0" step="0.01" />
-            </AppField>
-            <AppField id="monedaTransferencia" label="Moneda transferencia">
-              <AppSelect id="monedaTransferencia" v-model="form.idMonedaTransferencia" :options="monedas" option-label="nombreMoneda" option-value="idMoneda">
-                <template #option="{ option }">{{ option.simbolo }} {{ option.nombreMoneda }}</template>
-                <template #value="{ option, placeholder }">
-                  {{ option ? `${option.simbolo} ${option.nombreMoneda}` : placeholder }}
-                </template>
-              </AppSelect>
-            </AppField>
-          </div>
-        </div>
-
-        <div class="button-row full-row">
-          <AppButton type="submit" :disabled="saving">
-            {{ saving ? 'Guardando...' : 'Guardar sobre completo' }}
-          </AppButton>
-        </div>
-      </form>
-    </AppPanel>
-
-    <p v-if="error" class="status status-error">{{ error }}</p>
-
-    <AppPanel title="Sobres registrados">
-      <DataTable :columns="sobreColumns" :rows="sobres" empty-text="Aun no hay sobres registrados." />
-    </AppPanel>
-
-    <div class="grid grid-2">
-      <AppPanel title="Ofrendas registradas">
-        <DataTable :columns="ofrendaColumns" :rows="ofrendas" empty-text="Aun no hay ofrendas registradas." />
-      </AppPanel>
-
-      <AppPanel title="Transferencias registradas">
-        <DataTable
-          :columns="transferenciaColumns"
-          :rows="transferencias"
-          empty-text="Aun no hay transferencias registradas."
-        />
-      </AppPanel>
-    </div>
+    </DataTable>
   </section>
 </template>
-
-<style scoped>
-.panel-body.form-grid {
-  grid-template-columns: 1fr;
-}
-
-.form-section {
-  display: grid;
-  gap: 14px;
-}
-
-.form-section + .form-section {
-  padding-top: 18px;
-  border-top: 1px solid var(--color-line);
-}
-
-.form-section h4 {
-  margin: 0;
-  color: var(--color-ink);
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.full-row {
-  padding-top: 4px;
-}
-</style>

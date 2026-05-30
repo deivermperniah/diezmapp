@@ -1,4 +1,4 @@
-import { getConfiguracion, saveConfiguracion } from './configuracion.service.js';
+import { getConfiguracion, getTasaDolar, saveConfiguracion } from './configuracion.service.js';
 
 export const showConfiguracion = async (_req, res, next) => {
   try {
@@ -21,6 +21,19 @@ export const updateConfiguracionById = async (req, res, next) => {
       success: true,
       message: 'Configuracion actualizada correctamente.',
       data: configuracion,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const showTasaDolar = async (_req, res, next) => {
+  try {
+    const tasa = await getTasaDolar();
+
+    res.status(200).json({
+      success: true,
+      data: tasa,
     });
   } catch (error) {
     next(error);

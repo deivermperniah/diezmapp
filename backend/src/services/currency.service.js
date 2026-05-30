@@ -5,7 +5,7 @@ const currencies = [
   { idMoneda: '$', nombreMoneda: 'Dolar', simbolo: '$' },
 ];
 
-const BCV_RATE_URL = process.env.BCV_RATE_URL || 'https://bcv.today/api/v1/rate.json';
+const BCV_RATE_URL = process.env.BCV_RATE_URL || 'https://ve.dolarapi.com/v1/dolares/oficial';
 
 const getCurrencyById = (idMoneda) => {
   const value = String(idMoneda || '').trim();
@@ -16,7 +16,7 @@ export const getUsdCurrency = async () => {
   return currencies.find((currency) => currency.simbolo === '$');
 };
 
-export const getTasaBcvDolar = async () => {
+export const getTasaDolarOficial = async () => {
   let response;
 
   try {
@@ -34,13 +34,22 @@ export const getTasaBcvDolar = async () => {
   }
 
   const payload = await response.json().catch(() => null);
-  const tasa = Number(payload?.USD ?? payload?.tasa ?? payload?.rate);
+  const valor = Number(payload?.promedio);
+  const fechaActualizacion = payload?.fechaActualizacion || null;
 
-  if (Number.isNaN(tasa) || tasa <= 0) {
+  if (Number.isNaN(valor) || valor <= 0) {
     throw new AppError('La API externa no devolvio una tasa BCV valida.', 502);
   }
 
-  return tasa;
+  return {
+    valor,
+    fechaActualizacion,
+  };
+};
+
+export const getTasaBcvDolar = async () => {
+  const tasa = await getTasaDolarOficial();
+  return tasa.valor;
 };
 
 export const convertMoneyToUsd = async ({ amount, idMoneda }) => {
@@ -50,7 +59,6 @@ export const convertMoneyToUsd = async ({ amount, idMoneda }) => {
     throw new AppError('La moneda no existe.', 400);
   }
 
-  const tasaBcvDolar = await getTasaBcvDolar();
   const usdCurrency = await getUsdCurrency();
   const simbolo = String(currency.simbolo).trim();
 
@@ -65,6 +73,8 @@ export const convertMoneyToUsd = async ({ amount, idMoneda }) => {
   }
 
   if (simbolo === 'Bs') {
+    const tasaBcvDolar = await getTasaBcvDolar();
+
     return {
       amountUsd: Number((amount / tasaBcvDolar).toFixed(2)),
       originalAmount: Number(amount.toFixed(2)),
