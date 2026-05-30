@@ -4,8 +4,7 @@ import ConfiguracionView from '@/views/ConfiguracionView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import MiembrosView from '@/views/MiembrosView.vue'
 import OfrendasView from '@/views/OfrendasView.vue'
-import ReporteMensualView from '@/views/ReporteMensualView.vue'
-import ReporteSemanalView from '@/views/ReporteSemanalView.vue'
+import ReportesView from '@/views/ReportesView.vue'
 import SobresView from '@/views/SobresView.vue'
 import TransferenciasView from '@/views/TransferenciasView.vue'
 
@@ -26,25 +25,14 @@ const router = createRouter({
           component: TransferenciasView,
           meta: { title: 'Transferencias' },
         },
-        { path: 'reportes', redirect: '/reportes/semanal' },
-        {
-          path: 'reportes/semanal',
-          name: 'reporte-semanal',
-          component: ReporteSemanalView,
-          meta: { title: 'Reporte semanal' },
-        },
-        {
-          path: 'reportes/mensual',
-          name: 'reporte-mensual',
-          component: ReporteMensualView,
-          meta: { title: 'Reporte mensual' },
-        },
+        { path: 'reportes', name: 'reportes', component: ReportesView, meta: { title: 'Reportes' } },
         {
           path: 'configuracion',
           name: 'configuracion',
           component: ConfiguracionView,
           meta: { title: 'Configuración' },
         },
+        { path: 'iglesias', redirect: '/configuracion' },
       ],
     },
   ],

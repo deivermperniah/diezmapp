@@ -1,19 +1,19 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import DataTable from '@/components/DataTable.vue'
-import StatCard from '@/components/StatCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppField from '@/components/ui/AppField.vue'
-import AppInput from '@/components/ui/AppInput.vue'
-import AppPanel from '@/components/ui/AppPanel.vue'
-import PageActions from '@/components/ui/PageActions.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
 import { getConfiguracion } from '@/services/configuracion.service'
+import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getReporteMensual, getReporteSemanal } from '@/services/reportes.service'
+import { withMinimumDelay } from '@/utils/loading'
 
 const today = new Date().toISOString().slice(0, 10)
 const start = new Date()
 start.setDate(start.getDate() - 6)
 
+const tipoReporte = ref('mensual')
 const filtros = reactive({
   fechaInicio: start.toISOString().slice(0, 10),
   fechaFin: today,
@@ -21,23 +21,73 @@ const filtros = reactive({
   anio: new Date().getFullYear(),
 })
 
-const semanal = ref({ items: [], totals: { totalGeneral: 0 } })
-const mensual = ref({
-  items: [],
-  totals: {
-    totalDiezmos: 0,
-    totalPactoAmor: 0,
-    totalOfrendas: 0,
-    totalGeneral: 0,
+const reporte = ref({ items: [], totals: { totalGeneral: 0 } })
+const error = ref('')
+const loading = ref(false)
+const consulted = ref(false)
+const simboloMoneda = ref('$')
+
+const tiposReporte = [
+  { label: 'Mensual', value: 'mensual' },
+  { label: 'Semanal', value: 'semanal' },
+]
+
+const periodoMensual = computed({
+  get: () => new Date(Number(filtros.anio), Number(filtros.mes) - 1, 1),
+  set: (value) => {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return
+    filtros.mes = value.getMonth() + 1
+    filtros.anio = value.getFullYear()
   },
 })
-const error = ref('')
-const simboloMoneda = ref('Bs')
 
-const money = (value) => `${simboloMoneda.value} ${Number(value || 0).toLocaleString('es-VE', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})}`
+const fechaInicioSemanal = computed({
+  get: () => {
+    const [year, month, day] = String(filtros.fechaInicio).split('-').map(Number)
+    return new Date(year, month - 1, day)
+  },
+  set: (value) => {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return
+    filtros.fechaInicio = toDateString(value)
+  },
+})
+
+const fechaFinSemanal = computed({
+  get: () => {
+    const [year, month, day] = String(filtros.fechaFin).split('-').map(Number)
+    return new Date(year, month - 1, day)
+  },
+  set: (value) => {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return
+    filtros.fechaFin = toDateString(value)
+  },
+})
+
+const toDateString = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const money = (value) =>
+  `${simboloMoneda.value} ${Number(value || 0).toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+
+const formatDate = (value) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('es-VE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date)
+}
 
 const semanalColumns = [
   { key: 'numeroSobre', label: 'Sobre' },
@@ -55,82 +105,180 @@ const mensualColumns = [
   { key: 'totalSobre', label: 'Total' },
 ]
 
-const loadReportes = async () => {
+const columns = computed(() => (tipoReporte.value === 'semanal' ? semanalColumns : mensualColumns))
+const emptyText = computed(() =>
+  consulted.value
+    ? tipoReporte.value === 'semanal'
+      ? 'Sin datos semanales.'
+      : 'Sin datos mensuales.'
+    : 'Consulta y Exporta.',
+)
+
+const tableRows = computed(() =>
+  reporte.value.items.map((item) => ({
+    ...item,
+    fecha: formatDate(item.fecha),
+    montoDiezmo: money(item.montoDiezmo),
+    montoPactoAmor: money(item.montoPactoAmor),
+    otrasOfrendas: money(item.otrasOfrendas),
+    totalSobre: money(item.totalSobre),
+  })),
+)
+
+const loadReporte = async () => {
+  consulted.value = true
+  loading.value = true
   error.value = ''
+
   try {
-    const [configuracionData, semanalData, mensualData] = await Promise.all([
+    const [configuracionData, reporteData] = await withMinimumDelay(() => Promise.all([
       getConfiguracion(),
-      getReporteSemanal({
-        fechaInicio: filtros.fechaInicio,
-        fechaFin: filtros.fechaFin,
-      }),
-      getReporteMensual({
-        mes: filtros.mes,
-        anio: filtros.anio,
-      }),
-    ])
+      tipoReporte.value === 'semanal'
+        ? getReporteSemanal({
+            fechaInicio: filtros.fechaInicio,
+            fechaFin: filtros.fechaFin,
+          })
+        : getReporteMensual({
+            mes: filtros.mes,
+            anio: filtros.anio,
+          }),
+    ]))
+
     simboloMoneda.value = configuracionData.simboloMonedaPrincipal
-    semanal.value = semanalData
-    mensual.value = mensualData
+    reporte.value = reporteData
   } catch (err) {
     error.value = err.message
+  } finally {
+    loading.value = false
   }
 }
 
-onMounted(loadReportes)
+watch(iglesiaActivaId, () => {
+  if (consulted.value) {
+    loadReporte()
+  }
+})
 </script>
 
 <template>
   <section class="page">
-    <PageActions>
-      <AppButton variant="secondary" @click="loadReportes">Actualizar</AppButton>
-    </PageActions>
-
     <p v-if="error" class="status status-error">{{ error }}</p>
 
-    <div class="grid grid-3">
-      <StatCard label="Diezmos" :value="money(mensual.totals.totalDiezmos)" />
-      <StatCard
-        label="Pacto amor"
-        :value="money(mensual.totals.totalPactoAmor)"
-      />
-      <StatCard
-        label="Total general"
-        :value="money(mensual.totals.totalGeneral)"
-      />
-    </div>
+    <section class="report-card">
+      <form class="report-filter-grid" :class="{ weekly: tipoReporte === 'semanal' }" @submit.prevent="loadReporte">
+        <AppField id="tipoReporte" label="Tipo de reporte" class="compact-field">
+          <AppSelect
+            id="tipoReporte"
+            v-model="tipoReporte"
+            :options="tiposReporte"
+            option-label="label"
+            option-value="value"
+          />
+        </AppField>
 
-    <AppPanel title="Reporte semanal">
-      <form class="panel-body form-grid" @submit.prevent="loadReportes">
-        <AppField id="inicio" label="Inicio">
-          <AppInput id="inicio" v-model="filtros.fechaInicio" type="date" />
+        <AppField v-if="tipoReporte === 'mensual'" id="periodoMensual" label="Mes y año" class="compact-field">
+          <PDatePicker
+            input-id="periodoMensual"
+            v-model="periodoMensual"
+            view="month"
+            date-format="mm/yy"
+            show-icon
+            fluid
+          />
         </AppField>
-        <AppField id="fin" label="Fin">
-          <AppInput id="fin" v-model="filtros.fechaFin" type="date" />
-        </AppField>
-        <div class="button-row">
-          <AppButton type="submit">Consultar</AppButton>
+
+        <template v-else>
+          <AppField id="fechaInicio" label="Inicio" class="compact-field">
+            <PDatePicker
+              input-id="fechaInicio"
+              v-model="fechaInicioSemanal"
+              date-format="dd/mm/yy"
+              show-icon
+              fluid
+            />
+          </AppField>
+
+          <AppField id="fechaFin" label="Fin" class="compact-field">
+            <PDatePicker
+              input-id="fechaFin"
+              v-model="fechaFinSemanal"
+              date-format="dd/mm/yy"
+              show-icon
+              fluid
+            />
+          </AppField>
+        </template>
+
+        <div class="filter-actions">
+          <AppButton type="submit" icon="pi pi-search" label="Consultar" />
         </div>
       </form>
-      <DataTable :columns="semanalColumns" :rows="semanal.items" empty-text="Sin datos semanales." />
-    </AppPanel>
 
-    <AppPanel title="Reporte mensual">
-      <template #actions>
-        <strong>{{ money(mensual.totals.totalGeneral) }}</strong>
-      </template>
-      <form class="panel-body form-grid" @submit.prevent="loadReportes">
-        <AppField id="mes" label="Mes">
-          <AppInput id="mes" v-model="filtros.mes" type="number" min="1" max="12" />
-        </AppField>
-        <AppField id="anio" label="Anio">
-          <AppInput id="anio" v-model="filtros.anio" type="number" min="2000" />
-        </AppField>
-        <div class="button-row">
-          <AppButton type="submit">Consultar</AppButton>
-        </div>
-      </form>
-      <DataTable :columns="mensualColumns" :rows="mensual.items" empty-text="Sin datos mensuales." />
-    </AppPanel>
+      <DataTable
+        class="report-table"
+        :columns="columns"
+        :rows="tableRows"
+        :loading="loading"
+        :empty-text="emptyText"
+        :searchable="false"
+      >
+      </DataTable>
+    </section>
   </section>
 </template>
+
+<style scoped>
+.report-card {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.report-filter-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr auto;
+  align-items: end;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.report-filter-grid.weekly {
+  grid-template-columns: 1fr 1fr 1fr auto;
+}
+
+.compact-field :deep(label) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.report-card :deep(.report-table) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 980px) {
+  .report-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions,
+  .filter-actions :deep(.p-button) {
+    width: 100%;
+  }
+}
+</style>

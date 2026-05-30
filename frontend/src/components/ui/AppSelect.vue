@@ -8,6 +8,7 @@ const props = defineProps({
   optionLabel: { type: String, required: true },
   optionValue: { type: String, required: true },
   placeholder: { type: String, default: 'Seleccionar' },
+  filter: { type: Boolean, default: false },
 })
 
 defineEmits(['update:modelValue'])
@@ -27,6 +28,7 @@ const selectedOption = computed(() =>
     :option-label="optionLabel"
     :option-value="optionValue"
     :placeholder="placeholder"
+    :filter="filter"
     fluid
     @update:model-value="$emit('update:modelValue', $event)"
   >

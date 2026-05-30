@@ -7,9 +7,14 @@ const props = defineProps({
   columns: { type: Array, required: true },
   rows: { type: Array, default: () => [] },
   emptyText: { type: String, default: 'Sin registros para mostrar.' },
+  loading: { type: Boolean, default: false },
+  searchable: { type: Boolean, default: true },
 })
 
 const search = ref('')
+
+const skeletonRows = Array.from({ length: 5 }, (_, index) => ({ id: `loading-${index}` }))
+const visibleLoading = computed(() => props.loading)
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
 
@@ -29,46 +34,62 @@ const visibleRows = computed(() => {
 
 <template>
   <div class="table-wrap">
-    <PToolbar v-if="rows.length" class="table-toolbar">
+    <PToolbar v-if="searchable || $slots.toolbarStart" class="table-toolbar">
       <template #start>
-        <strong>{{ visibleRows.length }} registros</strong>
-      </template>
-      <template #end>
-        <span class="search-field">
+        <span v-if="searchable" class="search-field">
           <i class="pi pi-search" />
           <PInputText v-model="search" placeholder="Buscar" />
         </span>
       </template>
+      <template v-if="$slots.toolbarStart" #end>
+        <slot name="toolbarStart" />
+      </template>
     </PToolbar>
 
     <PrimeDataTable
-      v-if="visibleRows.length"
-      :value="visibleRows"
+      :value="visibleLoading ? skeletonRows : visibleRows"
       class="app-data-table"
       paginator
-      :rows="8"
-      :rows-per-page-options="[8, 15, 30]"
-      paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+      :rows="5"
+      paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
       current-page-report-template="{first}-{last} de {totalRecords}"
       size="small"
       striped-rows
       table-style="min-width: 720px"
+      removable-sort
     >
       <Column
         v-for="column in columns"
         :key="column.key"
         :field="column.key"
         :header="column.label"
-        sortable
-      />
-      <Column v-if="$slots.actions" header="Acciones" body-class="actions-cell">
+        :data-type="column.type || 'text'"
+        :sortable="!visibleLoading"
+      >
         <template #body="{ data }">
-          <slot name="actions" :row="data" />
+          <PSkeleton v-if="visibleLoading" height="1rem" :width="column.skeletonWidth || '72%'" />
+          <PTag v-else-if="column.variant === 'tag' && data[column.key]" :value="data[column.key]" severity="success" />
+          <span v-else>{{ data[column.key] }}</span>
         </template>
       </Column>
+      <Column
+        v-if="$slots.actions"
+        header=""
+        header-class="actions-header"
+        body-class="actions-cell"
+      >
+        <template #body="{ data }">
+          <div v-if="visibleLoading" class="button-row actions">
+            <PSkeleton shape="circle" size="2rem" />
+            <PSkeleton shape="circle" size="2rem" />
+          </div>
+          <slot v-else name="actions" :row="data" />
+        </template>
+      </Column>
+      <template #empty>
+        <div class="empty-state">{{ search ? 'Sin resultados para la busqueda.' : emptyText }}</div>
+      </template>
     </PrimeDataTable>
-
-    <div v-else class="empty-state">{{ search ? 'Sin resultados para la busqueda.' : emptyText }}</div>
 
   </div>
 </template>
@@ -76,7 +97,11 @@ const visibleRows = computed(() => {
 <style scoped>
 .table-wrap {
   width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
 }
 
 .table-toolbar {
@@ -108,6 +133,26 @@ const visibleRows = computed(() => {
 
 .app-data-table {
   overflow: hidden;
+}
+
+.app-data-table :deep(.p-datatable-tbody > tr > td) {
+  height: 44px;
+  vertical-align: middle;
+}
+
+.app-data-table :deep(.actions-header),
+.app-data-table :deep(.actions-cell) {
+  width: 240px;
+  text-align: right;
+}
+
+.app-data-table :deep(.actions-header .p-datatable-column-header-content),
+.app-data-table :deep(.actions-header .p-column-header-content) {
+  justify-content: flex-end;
+}
+
+.app-data-table :deep(.actions-cell .actions) {
+  justify-content: flex-end;
 }
 
 @media (max-width: 720px) {

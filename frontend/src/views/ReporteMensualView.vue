@@ -1,12 +1,12 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppField from '@/components/ui/AppField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
-import PageActions from '@/components/ui/PageActions.vue'
 import { getConfiguracion } from '@/services/configuracion.service'
+import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getReporteMensual } from '@/services/reportes.service'
 
 const filtros = reactive({
@@ -60,14 +60,11 @@ const loadReporte = async () => {
 }
 
 onMounted(loadReporte)
+watch(iglesiaActivaId, loadReporte)
 </script>
 
 <template>
   <section class="page">
-    <PageActions>
-      <AppButton variant="secondary" @click="loadReporte">Actualizar</AppButton>
-    </PageActions>
-
     <p v-if="error" class="status status-error">{{ error }}</p>
 
     <AppPanel title="Reporte mensual">

@@ -1,6 +1,30 @@
 <script setup>
+import { onMounted } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppTopbar from '@/components/AppTopbar.vue'
+import { getIglesias } from '@/services/catalogos.service'
+import {
+  getIglesiaActivaId,
+  iglesiaActivaNombre,
+  setIglesiaActivaId,
+} from '@/services/iglesia-activa.service'
+
+onMounted(async () => {
+  const activeId = getIglesiaActivaId()
+  const iglesias = await getIglesias().catch(() => [])
+
+  if (activeId) {
+    const active = iglesias.find((iglesia) => String(iglesia.idIglesia) === String(activeId))
+    if (active && !iglesiaActivaNombre.value) {
+      setIglesiaActivaId(active.idIglesia, active.nombreIglesia)
+    }
+    return
+  }
+
+  if (iglesias[0]?.idIglesia) {
+    setIglesiaActivaId(iglesias[0].idIglesia, iglesias[0].nombreIglesia)
+  }
+})
 </script>
 
 <template>

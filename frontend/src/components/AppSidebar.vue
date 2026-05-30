@@ -1,24 +1,45 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 const route = useRoute()
-const reportsOpen = ref(true)
+const router = useRouter()
 
-const navItems = [
-  { label: 'Dashboard', to: '/' },
-  { label: 'Miembros', to: '/miembros' },
-  { label: 'Sobres', to: '/sobres' },
-]
+const items = computed(() => [
+  {
+    label: 'Dashboard',
+    icon: 'pi pi-home',
+    to: '/',
+    command: () => router.push('/'),
+  },
+  {
+    label: 'Miembros',
+    icon: 'pi pi-users',
+    to: '/miembros',
+    command: () => router.push('/miembros'),
+  },
+  {
+    label: 'Sobres',
+    icon: 'pi pi-wallet',
+    to: '/sobres',
+    command: () => router.push('/sobres'),
+  },
+  {
+    label: 'Reportes',
+    icon: 'pi pi-chart-bar',
+    to: '/reportes',
+    command: () => router.push('/reportes'),
+  },
+  {
+    label: 'Configuración',
+    icon: 'pi pi-cog',
+    to: '/configuracion',
+    command: () => router.push('/configuracion'),
+  },
+])
 
-const reportItems = [
-  { label: 'Semanal', to: '/reportes/semanal' },
-  { label: 'Mensual', to: '/reportes/mensual' },
-]
-
-const bottomItems = [{ label: 'Configuración', to: '/configuracion' }]
-
-const isReportsActive = computed(() => route.path.startsWith('/reportes'))
+const isActive = (to) => route.path === to
 </script>
 
 <template>
@@ -30,54 +51,18 @@ const isReportsActive = computed(() => route.path.startsWith('/reportes'))
       </div>
     </div>
 
-    <nav class="nav-list" aria-label="Navegacion principal">
-      <RouterLink v-for="item in navItems" :key="item.to" :to="item.to" custom v-slot="{ href, navigate, isActive, isExactActive }">
-        <a
-          :href="href"
-          class="nav-link"
-          :class="{ active: item.to === '/' ? isExactActive : isActive }"
-          @click="navigate"
-        >
-          {{ item.label }}
-        </a>
-      </RouterLink>
-
-      <div class="nav-group">
-        <button
-          class="nav-link nav-toggle"
-          :class="{ active: isReportsActive }"
-          type="button"
-          :aria-expanded="reportsOpen"
-          @click="reportsOpen = !reportsOpen"
-        >
-          <span>Reportes</span>
-          <span class="chevron" aria-hidden="true">{{ reportsOpen ? '-' : '+' }}</span>
-        </button>
-
-        <div v-if="reportsOpen" class="nav-sublist">
-          <RouterLink v-for="item in reportItems" :key="item.to" :to="item.to" custom v-slot="{ href, navigate, isActive }">
-            <a
-              :href="href"
-              class="nav-sublink"
-              :class="{ active: isActive }"
-              @click="navigate"
-            >
-              {{ item.label }}
-            </a>
-          </RouterLink>
-        </div>
-      </div>
-
-      <RouterLink v-for="item in bottomItems" :key="item.to" :to="item.to" custom v-slot="{ href, navigate, isActive }">
-        <a
-          :href="href"
-          class="nav-link"
-          :class="{ active: isActive }"
-          @click="navigate"
-        >
-          {{ item.label }}
-        </a>
-      </RouterLink>
+    <nav class="nav-menu" aria-label="Navegación principal">
+      <button
+        v-for="item in items"
+        :key="item.label"
+        type="button"
+        class="nav-item"
+        :class="{ active: isActive(item.to) }"
+        @click="item.command"
+      >
+        <i :class="item.icon" aria-hidden="true"></i>
+        <span>{{ item.label }}</span>
+      </button>
     </nav>
   </aside>
 </template>
@@ -87,7 +72,7 @@ const isReportsActive = computed(() => route.path.startsWith('/reportes'))
   position: fixed;
   inset: 0 auto 0 0;
   width: var(--sidebar-width);
-  padding: 22px 18px;
+  padding: 20px 16px;
   background: var(--color-sidebar);
   color: #fff;
 }
@@ -96,7 +81,7 @@ const isReportsActive = computed(() => route.path.startsWith('/reportes'))
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 6px 24px;
+  padding: 6px 8px 22px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -111,76 +96,54 @@ const isReportsActive = computed(() => route.path.startsWith('/reportes'))
   font-weight: 900;
 }
 
-.brand strong {
+.brand strong,
+.brand span {
   display: block;
 }
 
 .brand strong {
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 0;
 }
 
-.nav-list {
-  display: grid;
-  gap: 6px;
-  margin-top: 22px;
+.brand span {
+  color: var(--color-sidebar-muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.nav-link {
+.nav-menu {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.nav-item {
   display: flex;
-  width: 100%;
   align-items: center;
-  justify-content: space-between;
-  border-radius: 7px;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 11px 12px;
   border: 0;
+  border-radius: 7px;
   background: transparent;
   color: #d1d5db;
-  padding: 11px 12px;
-  text-align: left;
+  cursor: pointer;
+  font: inherit;
   font-weight: 800;
-  transition:
-    background 0.16s ease,
-    color 0.16s ease;
+  text-align: left;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.nav-item i {
+  width: 18px;
+  text-align: center;
+}
+
+.nav-item:hover,
+.nav-item:focus-visible,
+.nav-item.active {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.nav-group {
-  display: grid;
-  gap: 6px;
-}
-
-.nav-toggle {
-  appearance: none;
-}
-
-.chevron {
-  font-size: 14px;
-  line-height: 1;
-}
-
-.nav-sublist {
-  display: grid;
-  gap: 4px;
-  padding-left: 12px;
-}
-
-.nav-sublink {
-  display: block;
-  border-radius: 7px;
-  color: #cbd5e1;
-  padding: 9px 12px;
-  font-size: 14px;
-  font-weight: 750;
-}
-
-.nav-sublink:hover,
-.nav-sublink.active {
-  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
@@ -188,10 +151,6 @@ const isReportsActive = computed(() => route.path.startsWith('/reportes'))
   .sidebar {
     position: static;
     width: 100%;
-  }
-
-  .nav-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

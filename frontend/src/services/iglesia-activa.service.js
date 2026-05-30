@@ -1,14 +1,28 @@
+import { ref } from 'vue'
+
 const KEY = 'diezmapp.idIglesiaActiva'
+const NAME_KEY = 'diezmapp.nombreIglesiaActiva'
+export const iglesiaActivaId = ref(localStorage.getItem(KEY) || '')
+export const iglesiaActivaNombre = ref(localStorage.getItem(NAME_KEY) || '')
 
-export const getIglesiaActivaId = () => localStorage.getItem(KEY) || ''
+export const getIglesiaActivaId = () => iglesiaActivaId.value || localStorage.getItem(KEY) || ''
 
-export const setIglesiaActivaId = (idIglesia) => {
+export const setIglesiaActivaId = (idIglesia, nombreIglesia = '') => {
   if (idIglesia) {
-    localStorage.setItem(KEY, String(idIglesia))
+    const value = String(idIglesia)
+    localStorage.setItem(KEY, value)
+    iglesiaActivaId.value = value
+    if (nombreIglesia) {
+      localStorage.setItem(NAME_KEY, nombreIglesia)
+      iglesiaActivaNombre.value = nombreIglesia
+    }
     return
   }
 
   localStorage.removeItem(KEY)
+  localStorage.removeItem(NAME_KEY)
+  iglesiaActivaId.value = ''
+  iglesiaActivaNombre.value = ''
 }
 
 export const withIglesiaActiva = (path) => {

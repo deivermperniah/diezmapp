@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -7,15 +7,17 @@ import AppField from '@/components/ui/AppField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import PageActions from '@/components/ui/PageActions.vue'
 import { getMonedas } from '@/services/catalogos.service'
+import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { createOfrenda, getOfrendas } from '@/services/ofrendas.service'
 import { getSobres } from '@/services/sobres.service'
+import { withMinimumDelay } from '@/utils/loading'
 
 const ofrendas = ref([])
 const sobres = ref([])
 const monedas = ref([])
 const error = ref('')
+const loading = ref(false)
 const toast = useToast()
 
 const form = reactive({
@@ -33,13 +35,14 @@ const columns = [
 ]
 
 const loadData = async () => {
+  loading.value = true
   error.value = ''
   try {
-    const [ofrendasData, sobresData, monedasData] = await Promise.all([
+    const [ofrendasData, sobresData, monedasData] = await withMinimumDelay(() => Promise.all([
       getOfrendas(),
       getSobres(),
       getMonedas(),
-    ])
+    ]))
 
     ofrendas.value = ofrendasData
     sobres.value = sobresData
@@ -48,6 +51,8 @@ const loadData = async () => {
     form.idMoneda ||= monedasData[0]?.idMoneda || ''
   } catch (err) {
     error.value = err.message
+  } finally {
+    loading.value = false
   }
 }
 
@@ -80,14 +85,11 @@ const submitForm = async () => {
 }
 
 onMounted(loadData)
+watch(iglesiaActivaId, loadData)
 </script>
 
 <template>
   <section class="page">
-    <PageActions>
-      <AppButton variant="secondary" @click="loadData">Actualizar</AppButton>
-    </PageActions>
-
     <AppPanel title="Nueva ofrenda">
       <form class="panel-body form-grid" @submit.prevent="submitForm">
         <AppField id="sobre" label="Sobre">
@@ -115,7 +117,11 @@ onMounted(loadData)
     <p v-if="error" class="status status-error">{{ error }}</p>
 
     <AppPanel title="Ofrendas registradas">
-      <DataTable :columns="columns" :rows="ofrendas" empty-text="Aun no hay ofrendas registradas." />
+      <DataTable :columns="columns" :rows="ofrendas" :loading="loading" empty-text="Aun no hay ofrendas registradas.">
+        <template #toolbarStart>
+          <PButton icon="pi pi-refresh" severity="secondary" outlined :loading="loading" @click="loadData" />
+        </template>
+      </DataTable>
     </AppPanel>
   </section>
 </template>
