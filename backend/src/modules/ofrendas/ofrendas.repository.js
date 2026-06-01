@@ -7,16 +7,9 @@ const ofrendaSelect = `
     s.Numero_Sobre AS "numeroSobre",
     TO_CHAR(s.Fecha, 'YYYY-MM-DD') AS "fechaSobre",
     m.Id_Miembro AS "idMiembro",
-    m.Nombre AS "nombreMiembro",
-    o.Monto_Ofrenda AS "montoOfrenda",
-    o.Id_Moneda AS "idMoneda",
-    CASE WHEN o.Id_Moneda = '$' THEN 'Dolar' ELSE 'Bolivar' END AS "nombreMoneda",
-    o.Id_Moneda AS "simboloMoneda",
-    o.Monto_Ofrenda_Original AS "montoOfrendaOriginal",
-    o.Id_Moneda_Original AS "idMonedaOriginal",
-    CASE WHEN o.Id_Moneda_Original = '$' THEN 'Dolar' ELSE 'Bolivar' END AS "nombreMonedaOriginal",
-    o.Id_Moneda_Original AS "simboloMonedaOriginal",
-    o.Tasa_Bcv_Dolar::FLOAT AS "tasaBcvDolar"
+    CONCAT_WS(' ', m.Nombre, NULLIF(m.Apellido, '')) AS "nombreMiembro",
+    o.Nombre_Ofrenda AS "nombreOfrenda",
+    o.Monto_Ofrenda::FLOAT AS "montoOfrenda"
   FROM OFRENDA_COLABORACION o
   INNER JOIN SOBRE s ON s.Id_Sobre = o.Id_Sobre
   INNER JOIN MIEMBRO m ON m.Id_Miembro = s.Id_Miembro
@@ -66,26 +59,20 @@ export const findOfrendasBySobreId = async (idSobre) => {
 
 export const createOfrenda = async ({
   idSobre,
+  nombreOfrenda,
   montoOfrenda,
-  idMoneda,
-  montoOfrendaOriginal,
-  idMonedaOriginal,
-  tasaBcvDolar,
 }) => {
   const result = await query(
     `
       INSERT INTO OFRENDA_COLABORACION (
         Id_Sobre,
-        Monto_Ofrenda,
-        Id_Moneda,
-        Monto_Ofrenda_Original,
-        Id_Moneda_Original,
-        Tasa_Bcv_Dolar
+        Nombre_Ofrenda,
+        Monto_Ofrenda
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3)
       RETURNING Id_Ofrenda AS "idOfrenda"
     `,
-    [idSobre, montoOfrenda, idMoneda, montoOfrendaOriginal, idMonedaOriginal, tasaBcvDolar],
+    [idSobre, nombreOfrenda, montoOfrenda],
   );
 
   return findOfrendaById(result.rows[0].idOfrenda);
@@ -93,22 +80,19 @@ export const createOfrenda = async ({
 
 export const updateOfrenda = async (
   idOfrenda,
-  { idSobre, montoOfrenda, idMoneda, montoOfrendaOriginal, idMonedaOriginal, tasaBcvDolar },
+  { idSobre, nombreOfrenda, montoOfrenda },
 ) => {
   const result = await query(
     `
       UPDATE OFRENDA_COLABORACION
       SET
         Id_Sobre = $1,
-        Monto_Ofrenda = $2,
-        Id_Moneda = $3,
-        Monto_Ofrenda_Original = $4,
-        Id_Moneda_Original = $5,
-        Tasa_Bcv_Dolar = $6
-      WHERE Id_Ofrenda = $7
+        Nombre_Ofrenda = $2,
+        Monto_Ofrenda = $3
+      WHERE Id_Ofrenda = $4
       RETURNING Id_Ofrenda AS "idOfrenda"
     `,
-    [idSobre, montoOfrenda, idMoneda, montoOfrendaOriginal, idMonedaOriginal, tasaBcvDolar, idOfrenda],
+    [idSobre, nombreOfrenda, montoOfrenda, idOfrenda],
   );
 
   if (!result.rows[0]) return null;

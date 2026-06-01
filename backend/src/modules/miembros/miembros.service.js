@@ -1,5 +1,6 @@
 import { AppError } from '../../utils/app-error.js';
 import {
+  countSobresByMiembro,
   createMiembro,
   deleteMiembro,
   findAllMiembros,
@@ -12,9 +13,13 @@ const normalizeEmail = (email) => {
   return String(email).trim().toLowerCase();
 };
 
-const validateMiembroPayload = ({ nombre, email, idIglesia }) => {
+const validateMiembroPayload = ({ nombre, apellido, email, idIglesia }) => {
   if (!nombre || String(nombre).trim().length < 2) {
     throw new AppError('El nombre del miembro es obligatorio.', 400);
+  }
+
+  if (!apellido || String(apellido).trim().length < 2) {
+    throw new AppError('El apellido del miembro es obligatorio.', 400);
   }
 
   if (!idIglesia || Number.isNaN(Number(idIglesia))) {
@@ -27,6 +32,7 @@ const validateMiembroPayload = ({ nombre, email, idIglesia }) => {
 
   return {
     nombre: String(nombre).trim(),
+    apellido: String(apellido).trim(),
     email: normalizeEmail(email),
     idIglesia: Number(idIglesia),
   };
@@ -77,7 +83,14 @@ export const editMiembro = async (idMiembro, payload) => {
 };
 
 export const removeMiembro = async (idMiembro) => {
-  const miembro = await deleteMiembro(parseId(idMiembro));
+  const parsedId = parseId(idMiembro);
+  const totalSobres = await countSobresByMiembro(parsedId);
+
+  if (totalSobres > 0) {
+    throw new AppError('No se puede eliminar el miembro porque tiene sobres registrados.', 400);
+  }
+
+  const miembro = await deleteMiembro(parsedId);
 
   if (!miembro) {
     throw new AppError('Miembro no encontrado.', 404);

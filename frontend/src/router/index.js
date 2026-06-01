@@ -5,6 +5,7 @@ import DashboardView from '@/views/DashboardView.vue'
 import MiembrosView from '@/views/MiembrosView.vue'
 import OfrendasView from '@/views/OfrendasView.vue'
 import ReportesView from '@/views/ReportesView.vue'
+import SobreDetalleView from '@/views/SobreDetalleView.vue'
 import SobresView from '@/views/SobresView.vue'
 import TransferenciasView from '@/views/TransferenciasView.vue'
 
@@ -18,6 +19,7 @@ const router = createRouter({
         { path: '', name: 'dashboard', component: DashboardView, meta: { title: 'Dashboard' } },
         { path: 'miembros', name: 'miembros', component: MiembrosView, meta: { title: 'Miembros' } },
         { path: 'sobres', name: 'sobres', component: SobresView, meta: { title: 'Sobres' } },
+        { path: 'sobres/:id', name: 'sobre-detalle', component: SobreDetalleView, meta: { title: 'Detalle de sobre' } },
         { path: 'ofrendas', name: 'ofrendas', component: OfrendasView, meta: { title: 'Ofrendas' } },
         {
           path: 'transferencias',

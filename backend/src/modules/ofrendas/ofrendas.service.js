@@ -39,6 +39,11 @@ const parseMoney = (value, fieldName) => {
   return Number(parsedValue.toFixed(2));
 };
 
+const parseOptionalText = (value) => {
+  const parsedValue = String(value || '').trim();
+  return parsedValue || null;
+};
+
 const validateOfrendaPayload = async (payload) => {
   const conversion = await convertMoneyToUsd({
     amount: parseMoney(payload.montoOfrenda, 'El monto de ofrenda'),
@@ -47,11 +52,8 @@ const validateOfrendaPayload = async (payload) => {
 
   return {
     idSobre: parsePositiveInteger(payload.idSobre, 'El sobre'),
+    nombreOfrenda: parseOptionalText(payload.nombreOfrenda),
     montoOfrenda: conversion.amountUsd,
-    idMoneda: conversion.usdCurrencyId,
-    montoOfrendaOriginal: conversion.originalAmount,
-    idMonedaOriginal: conversion.originalCurrencyId,
-    tasaBcvDolar: conversion.tasaBcvDolar,
   };
 };
 

@@ -9,6 +9,8 @@ const props = defineProps({
   optionValue: { type: String, required: true },
   placeholder: { type: String, default: 'Seleccionar' },
   filter: { type: Boolean, default: false },
+  overlayClass: { type: String, default: '' },
+  scrollHeight: { type: String, default: '14rem' },
 })
 
 defineEmits(['update:modelValue'])
@@ -29,6 +31,8 @@ const selectedOption = computed(() =>
     :option-value="optionValue"
     :placeholder="placeholder"
     :filter="filter"
+    :overlay-class="overlayClass"
+    :scroll-height="scrollHeight"
     fluid
     @update:model-value="$emit('update:modelValue', $event)"
   >

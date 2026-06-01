@@ -237,6 +237,98 @@ a {
   padding: 18px 20px 20px;
 }
 
+.p-menu .p-menuitem.menu-item-info > .p-menuitem-content,
+.p-menu .p-menu-item.menu-item-info > .p-menu-item-content {
+  background: #eff6ff;
+  color: #275efe;
+}
+
+.p-menu .p-menuitem.menu-item-info > .p-menuitem-content:hover,
+.p-menu .p-menu-item.menu-item-info > .p-menu-item-content:hover {
+  background: #dbeafe;
+}
+
+.p-menu .p-menuitem.menu-item-edit > .p-menuitem-content,
+.p-menu .p-menu-item.menu-item-edit > .p-menu-item-content {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.p-menu .p-menuitem.menu-item-edit > .p-menuitem-content:hover,
+.p-menu .p-menu-item.menu-item-edit > .p-menu-item-content:hover {
+  background: #e2e8f0;
+}
+
+.p-menu .p-menuitem.menu-item-danger > .p-menuitem-content,
+.p-menu .p-menu-item.menu-item-danger > .p-menu-item-content {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.p-menu .p-menuitem.menu-item-danger > .p-menuitem-content:hover,
+.p-menu .p-menu-item.menu-item-danger > .p-menu-item-content:hover {
+  background: #ffe4e6;
+}
+
+.p-menu .p-menuitem-content,
+.p-menu .p-menu-item-content {
+  border-radius: 8px;
+}
+
+.p-menu {
+  min-width: 0 !important;
+  width: 116px !important;
+  max-width: 116px !important;
+}
+
+.p-menu-list,
+.p-menu .p-menu-list {
+  padding: 8px;
+}
+
+.p-menu .p-menuitem-link,
+.p-menu .p-menu-item-link {
+  gap: 8px;
+  padding: 6px 8px;
+}
+
+.member-select-panel .p-select-header {
+  padding: 14px;
+}
+
+.member-select-panel .p-select-list-container {
+  padding: 0 4px 10px 14px;
+  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+.member-select-panel .p-select-list-container::-webkit-scrollbar {
+  width: 10px;
+  height: 5px;
+}
+
+.member-select-panel .p-select-list-container::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: content-box;
+}
+
+.member-select-panel .p-select-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.member-select-panel .p-select-list {
+  padding: 0;
+}
+
+.member-select-panel .p-select-option {
+  border-radius: 8px;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
 @media (max-width: 980px) {
   .grid-2,
   .grid-3,

@@ -86,9 +86,6 @@ const validateTransferenciaPayload = async (payload) => {
       'El banco o cuenta receptora',
     ),
     montoTransferencia: conversion.amountUsd,
-    montoTransferenciaOriginal: conversion.originalAmount,
-    idMonedaOriginal: conversion.originalCurrencyId,
-    tasaBcvDolar: conversion.tasaBcvDolar,
   };
 };
 

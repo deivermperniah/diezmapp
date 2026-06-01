@@ -2,13 +2,11 @@
 import { computed, reactive, watch } from 'vue'
 import AppField from '@/components/ui/AppField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
-import AppSelect from '@/components/ui/AppSelect.vue'
 import FormDialog from '@/components/ui/FormDialog.vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
   member: { type: Object, default: null },
-  iglesias: { type: Array, default: () => [] },
   defaultIglesia: { type: [String, Number], default: '' },
   saving: { type: Boolean, default: false },
 })
@@ -17,18 +15,18 @@ const emit = defineEmits(['update:visible', 'save'])
 
 const form = reactive({
   nombre: '',
+  apellido: '',
   email: '',
-  idIglesia: '',
 })
 
 const isEditing = computed(() => Boolean(props.member?.idMiembro))
 
 watch(
-  () => [props.visible, props.member, props.defaultIglesia],
+  () => [props.visible, props.member],
   () => {
     form.nombre = props.member?.nombre || ''
+    form.apellido = props.member?.apellido || ''
     form.email = props.member?.email || ''
-    form.idIglesia = props.member?.idIglesia || props.defaultIglesia || ''
   },
   { immediate: true },
 )
@@ -36,8 +34,9 @@ watch(
 const submit = () => {
   emit('save', {
     nombre: form.nombre,
+    apellido: form.apellido,
     email: form.email || null,
-    idIglesia: Number(form.idIglesia),
+    idIglesia: Number(props.defaultIglesia),
   })
 }
 </script>
@@ -53,22 +52,18 @@ const submit = () => {
     @submit="submit"
   >
     <form class="dialog-form" @submit.prevent="submit">
-      <AppField id="nombre" label="Nombre">
-        <AppInput id="nombre" v-model="form.nombre" required />
-      </AppField>
+      <div class="name-row">
+        <AppField id="nombre" label="Nombre">
+          <AppInput id="nombre" v-model="form.nombre" required />
+        </AppField>
+
+        <AppField id="apellido" label="Apellido">
+          <AppInput id="apellido" v-model="form.apellido" required />
+        </AppField>
+      </div>
 
       <AppField id="email" label="Email">
         <AppInput id="email" v-model="form.email" type="email" />
-      </AppField>
-
-      <AppField id="iglesia" label="Iglesia">
-        <AppSelect
-          id="iglesia"
-          v-model="form.idIglesia"
-          :options="iglesias"
-          option-label="nombreIglesia"
-          option-value="idIglesia"
-        />
       </AppField>
     </form>
   </FormDialog>
@@ -78,5 +73,17 @@ const submit = () => {
 .dialog-form {
   display: grid;
   gap: 20px;
+}
+
+.name-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .name-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

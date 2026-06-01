@@ -4,7 +4,6 @@ import DataTable from '@/components/DataTable.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppField from '@/components/ui/AppField.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import { getConfiguracion } from '@/services/configuracion.service'
 import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getReporteMensual, getReporteSemanal } from '@/services/reportes.service'
 import { withMinimumDelay } from '@/utils/loading'
@@ -25,7 +24,6 @@ const reporte = ref({ items: [], totals: { totalGeneral: 0 } })
 const error = ref('')
 const loading = ref(false)
 const consulted = ref(false)
-const simboloMoneda = ref('$')
 
 const tiposReporte = [
   { label: 'Mensual', value: 'mensual' },
@@ -71,7 +69,7 @@ const toDateString = (date) => {
 }
 
 const money = (value) =>
-  `${simboloMoneda.value} ${Number(value || 0).toLocaleString('es-VE', {
+  `$ ${Number(value || 0).toLocaleString('es-VE', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
@@ -90,19 +88,19 @@ const formatDate = (value) => {
 }
 
 const semanalColumns = [
-  { key: 'numeroSobre', label: 'Sobre' },
-  { key: 'nombre', label: 'Nombre' },
-  { key: 'fecha', label: 'Fecha' },
-  { key: 'totalSobre', label: 'Total' },
+  { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
+  { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
+  { key: 'fecha', label: 'Fecha', skeletonWidth: '86px' },
+  { key: 'totalSobre', label: 'Total', skeletonWidth: '74px' },
 ]
 
 const mensualColumns = [
-  { key: 'numeroSobre', label: 'Sobre' },
-  { key: 'nombre', label: 'Nombre' },
-  { key: 'montoDiezmo', label: 'Diezmo' },
-  { key: 'montoPactoAmor', label: 'Pacto amor' },
-  { key: 'otrasOfrendas', label: 'Ofrendas' },
-  { key: 'totalSobre', label: 'Total' },
+  { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
+  { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
+  { key: 'montoDiezmo', label: 'Diezmo', skeletonWidth: '74px' },
+  { key: 'montoPactoAmor', label: 'Pacto amor', skeletonWidth: '74px' },
+  { key: 'otrasOfrendas', label: 'Ofrendas', skeletonWidth: '74px' },
+  { key: 'totalSobre', label: 'Total', skeletonWidth: '74px' },
 ]
 
 const columns = computed(() => (tipoReporte.value === 'semanal' ? semanalColumns : mensualColumns))
@@ -125,14 +123,20 @@ const tableRows = computed(() =>
   })),
 )
 
+const monthlyTotals = computed(() => ({
+  montoDiezmo: money(reporte.value.totals?.totalDiezmos),
+  montoPactoAmor: money(reporte.value.totals?.totalPactoAmor),
+  otrasOfrendas: money(reporte.value.totals?.totalOfrendas),
+  totalSobre: money(reporte.value.totals?.totalGeneral),
+}))
+
 const loadReporte = async () => {
   consulted.value = true
   loading.value = true
   error.value = ''
 
   try {
-    const [configuracionData, reporteData] = await withMinimumDelay(() => Promise.all([
-      getConfiguracion(),
+    const reporteData = await withMinimumDelay(() =>
       tipoReporte.value === 'semanal'
         ? getReporteSemanal({
             fechaInicio: filtros.fechaInicio,
@@ -142,9 +146,8 @@ const loadReporte = async () => {
             mes: filtros.mes,
             anio: filtros.anio,
           }),
-    ]))
+    )
 
-    simboloMoneda.value = configuracionData.simboloMonedaPrincipal
     reporte.value = reporteData
   } catch (err) {
     error.value = err.message
@@ -223,6 +226,13 @@ watch(iglesiaActivaId, () => {
         :searchable="false"
       >
       </DataTable>
+
+      <div v-if="tipoReporte === 'mensual' && consulted" class="report-totals">
+        <span>Diezmo: {{ monthlyTotals.montoDiezmo }}</span>
+        <span>Pacto amor: {{ monthlyTotals.montoPactoAmor }}</span>
+        <span>Ofrendas: {{ monthlyTotals.otrasOfrendas }}</span>
+        <strong>Total: {{ monthlyTotals.totalSobre }}</strong>
+      </div>
     </section>
   </section>
 </template>
@@ -240,15 +250,15 @@ watch(iglesiaActivaId, () => {
 
 .report-filter-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1fr auto;
+  grid-template-columns: 220px 220px auto;
   align-items: end;
   gap: 16px;
-  padding: 18px 20px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--color-line);
 }
 
 .report-filter-grid.weekly {
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: 220px 220px 220px auto;
 }
 
 .compact-field :deep(label) {
@@ -269,6 +279,22 @@ watch(iglesiaActivaId, () => {
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+.report-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.report-totals strong {
+  color: var(--color-ink);
 }
 
 @media (max-width: 980px) {

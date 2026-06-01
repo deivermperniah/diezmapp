@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import ChurchFormDialog from '@/components/ChurchFormDialog.vue'
@@ -26,10 +26,12 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const selectedChurch = ref(null)
 const saving = ref(false)
+const optionsMenu = ref(null)
+const selectedMenuRow = ref(null)
 
 const columns = [
-  { key: 'nombreIglesia', label: 'Iglesia' },
-  { key: 'ciudad', label: 'Ciudad' },
+  { key: 'nombreIglesia', label: 'Iglesia', skeletonWidth: '140px' },
+  { key: 'ciudad', label: 'Ciudad', skeletonWidth: '96px' },
 ]
 
 const tasaDolar = ref(null)
@@ -136,6 +138,30 @@ const openCreate = () => {
 const openEdit = (row) => {
   selectedChurch.value = row
   dialogVisible.value = true
+}
+
+const optionItems = computed(() => {
+  const row = selectedMenuRow.value
+
+  return [
+    {
+      label: 'Editar',
+      icon: 'pi pi-pencil',
+      class: 'menu-item-edit',
+      command: () => openEdit(row),
+    },
+    {
+      label: 'Eliminar',
+      icon: 'pi pi-trash',
+      class: 'menu-item-danger',
+      command: () => removeRow(row),
+    },
+  ]
+})
+
+const toggleOptions = (event, row) => {
+  selectedMenuRow.value = row
+  optionsMenu.value.toggle(event)
 }
 
 const saveChurch = async (payload) => {
@@ -264,7 +290,13 @@ onMounted(() => {
 
     <h2 class="config-section-title">Iglesias</h2>
 
-    <DataTable :columns="columns" :rows="iglesias" :loading="loading" empty-text="Aun no hay iglesias registradas.">
+    <DataTable
+      :columns="columns"
+      :rows="iglesias"
+      :loading="loading"
+      actions-width="160px"
+      empty-text="Aun no hay iglesias registradas."
+    >
       <template #toolbarStart>
         <div class="button-row">
           <PButton icon="pi pi-refresh" severity="secondary" outlined :loading="loading" @click="loadData" />
@@ -292,11 +324,11 @@ onMounted(() => {
             size="small"
             @click="activateRow(row)"
           />
-          <PButton icon="pi pi-pencil" severity="secondary" outlined size="small" @click="openEdit(row)" />
-          <PButton icon="pi pi-trash" severity="danger" outlined size="small" @click="removeRow(row)" />
+          <PButton v-tooltip.top="'Opciones'" icon="pi pi-ellipsis-v" severity="secondary" outlined size="small" @click="toggleOptions($event, row)" />
         </div>
       </template>
     </DataTable>
+    <PMenu ref="optionsMenu" :model="optionItems" popup />
 
     <ChurchFormDialog
       v-model:visible="dialogVisible"

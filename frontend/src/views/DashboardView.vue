@@ -1,27 +1,40 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useConfirm } from 'primevue/useconfirm'
+import { useToast } from 'primevue/usetoast'
+import ContributionFormDialog from '@/components/ContributionFormDialog.vue'
 import DataTable from '@/components/DataTable.vue'
+import SobreDetailDialog from '@/components/SobreDetailDialog.vue'
 import StatCard from '@/components/StatCard.vue'
-import { getConfiguracion } from '@/services/configuracion.service'
-import { iglesiaActivaId } from '@/services/iglesia-activa.service'
+import { getMonedas } from '@/services/catalogos.service'
+import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getMiembros } from '@/services/miembros.service'
 import { getReporteMensual } from '@/services/reportes.service'
-import { getSobres } from '@/services/sobres.service'
+import { deleteSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
 import { withMinimumDelay } from '@/utils/loading'
 
 const loading = ref(true)
 const loadingCards = ref(true)
+const saving = ref(false)
+const dialogVisible = ref(false)
+const detailDialogVisible = ref(false)
 const error = ref('')
 const miembros = ref([])
+const monedas = ref([])
 const sobres = ref([])
+const selectedSobre = ref(null)
+const selectedDetailId = ref(null)
+const optionsMenu = ref(null)
+const selectedMenuRow = ref(null)
 const reporteMensual = ref({ totals: { totalGeneral: 0 }, items: [] })
-const simboloMoneda = ref('Bs')
+const confirm = useConfirm()
+const toast = useToast()
 
 const currentDate = new Date()
 const currentMonth = currentDate.getMonth() + 1
 const currentYear = currentDate.getFullYear()
 
-const money = (value) => `${simboloMoneda.value} ${Number(value || 0).toLocaleString('es-VE', {
+const money = (value) => `$ ${Number(value || 0).toLocaleString('es-VE', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })}`
@@ -31,27 +44,37 @@ const totalGeneral = computed(() =>
 )
 
 const columns = [
-  { key: 'numeroSobre', label: 'Sobre' },
-  { key: 'nombre', label: 'Nombre' },
-  { key: 'fecha', label: 'Fecha' },
-  { key: 'totalSobre', label: 'Total' },
+  { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
+  { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
+  { key: 'fecha', label: 'Fecha', skeletonWidth: '86px' },
+  { key: 'totalSobre', label: 'Total', skeletonWidth: '74px' },
 ]
+
+const tableRows = computed(() =>
+  sobres.value.map((sobre) => ({
+    idSobre: sobre.idSobre,
+    numeroSobre: sobre.numeroSobre,
+    nombre: sobre.nombreMiembro,
+    fecha: sobre.fecha,
+    totalSobre: money(sobre.totalIncluido),
+  })),
+)
 
 const loadDashboard = async () => {
   loading.value = true
   error.value = ''
 
   try {
-    const [configuracionData, miembrosData, sobresData, reporteData] =
+    const [miembrosData, monedasData, sobresData, reporteData] =
       await withMinimumDelay(() => Promise.all([
-        getConfiguracion(),
         getMiembros(),
+        getMonedas(),
         getSobres(),
         getReporteMensual({ mes: currentMonth, anio: currentYear }),
       ]))
 
-    simboloMoneda.value = configuracionData.simboloMonedaPrincipal
     miembros.value = miembrosData
+    monedas.value = monedasData
     sobres.value = sobresData
     reporteMensual.value = reporteData
   } catch (err) {
@@ -62,12 +85,128 @@ const loadDashboard = async () => {
   }
 }
 
+const openEdit = async (row) => {
+  try {
+    selectedSobre.value = await getSobre(row.idSobre)
+    dialogVisible.value = true
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'No se pudo cargar el sobre',
+      detail: err.message,
+      life: 3600,
+    })
+  }
+}
+
+const openDetails = (row) => {
+  selectedDetailId.value = row.idSobre
+  detailDialogVisible.value = true
+}
+
+const optionItems = computed(() => [
+  {
+    label: 'Detalles',
+    icon: 'pi pi-eye',
+    class: 'menu-item-info',
+    command: () => openDetails(selectedMenuRow.value),
+  },
+  {
+    label: 'Editar',
+    icon: 'pi pi-pencil',
+    class: 'menu-item-edit',
+    command: () => openEdit(selectedMenuRow.value),
+  },
+  {
+    label: 'Eliminar',
+    icon: 'pi pi-trash',
+    class: 'menu-item-danger',
+    command: () => removeRow(selectedMenuRow.value),
+  },
+])
+
+const toggleOptions = (event, row) => {
+  selectedMenuRow.value = row
+  optionsMenu.value.toggle(event)
+}
+
+const saveContribution = async (form) => {
+  if (!selectedSobre.value?.idSobre) return
+
+  saving.value = true
+  try {
+    await updateSobre(selectedSobre.value.idSobre, {
+      fecha: form.fecha,
+      idIglesia: Number(getIglesiaActivaId()),
+      idMiembro: Number(form.idMiembro),
+      montoDiezmo: form.montoDiezmo || 0,
+      idMonedaDiezmo: form.idMonedaDiezmo,
+      montoPactoAmor: form.montoPactoAmor || 0,
+      idMonedaPacto: form.idMonedaPacto || form.idMonedaDiezmo,
+      ofrendas: form.ofrendas,
+      transferencias: form.transferencias,
+    })
+
+    toast.add({ severity: 'success', summary: 'Sobre actualizado', life: 2600 })
+    dialogVisible.value = false
+    selectedSobre.value = null
+    await loadDashboard()
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'No se pudo guardar',
+      detail: err.message,
+      life: 3600,
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
+const removeRow = (row) => {
+  confirm.require({
+    header: 'Eliminar sobre',
+    message: `Seguro que deseas eliminar el sobre ${row.numeroSobre}?`,
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: 'Cancelar',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    acceptLabel: 'Eliminar',
+    acceptIcon: 'pi pi-trash',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await deleteSobre(row.idSobre)
+        toast.add({ severity: 'success', summary: 'Sobre eliminado', life: 2600 })
+        await loadDashboard()
+      } catch (err) {
+        toast.add({
+          severity: 'error',
+          summary: 'No se pudo eliminar',
+          detail: err.message,
+          life: 3600,
+        })
+      }
+    },
+  })
+}
+
 onMounted(loadDashboard)
 watch(iglesiaActivaId, loadDashboard)
 </script>
 
 <template>
   <section class="page">
+    <ContributionFormDialog
+      v-model:visible="dialogVisible"
+      :miembros="miembros"
+      :monedas="monedas"
+      :sobre="selectedSobre"
+      :saving="saving"
+      @save="saveContribution"
+    />
+
+    <SobreDetailDialog v-model:visible="detailDialogVisible" :id-sobre="selectedDetailId" />
+
     <p v-if="error" class="status status-error">{{ error }}</p>
 
     <div class="grid grid-3">
@@ -88,14 +227,21 @@ watch(iglesiaActivaId, loadDashboard)
 
     <DataTable
       :columns="columns"
-      :rows="reporteMensual.items"
+      :rows="tableRows"
       :loading="loading"
+      actions-width="76px"
       empty-text="Aun no hay sobres para este mes."
     >
       <template #toolbarStart>
         <PButton icon="pi pi-refresh" severity="secondary" outlined :loading="loading" @click="loadDashboard" />
       </template>
+      <template #actions="{ row }">
+        <div class="button-row actions">
+          <PButton v-tooltip.top="'Opciones'" icon="pi pi-ellipsis-v" severity="secondary" outlined size="small" @click="toggleOptions($event, row)" />
+        </div>
+      </template>
     </DataTable>
+    <PMenu ref="optionsMenu" :model="optionItems" popup />
     </section>
   </section>
 </template>
@@ -110,5 +256,9 @@ watch(iglesiaActivaId, loadDashboard)
   color: var(--color-ink);
   font-size: 18px;
   font-weight: 900;
+}
+
+.actions {
+  justify-content: flex-end;
 }
 </style>

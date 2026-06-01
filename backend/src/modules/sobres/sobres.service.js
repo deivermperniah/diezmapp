@@ -1,5 +1,7 @@
 import { AppError } from '../../utils/app-error.js';
-import { convertMoneyToUsd } from '../../services/currency.service.js';
+import { convertMoneyToUsd, getTasaBcvDolar } from '../../services/currency.service.js';
+import { findOfrendasBySobreId } from '../ofrendas/ofrendas.repository.js';
+import { findTransferenciasBySobreId } from '../transferencias/transferencias.repository.js';
 import {
   createSobre,
   deleteSobre,
@@ -56,6 +58,11 @@ const parseRequiredText = (value, fieldName, minLength = 2) => {
   return parsedValue;
 };
 
+const parseOptionalText = (value) => {
+  const parsedValue = String(value || '').trim();
+  return parsedValue || null;
+};
+
 const parseFecha = (fecha) => {
   if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
     throw new AppError('La fecha debe tener formato YYYY-MM-DD.', 400);
@@ -77,7 +84,9 @@ const parseFecha = (fecha) => {
 
 const parseId = (idSobre) => parsePositiveInteger(idSobre, 'El id del sobre');
 
-const validateOfrendas = async (ofrendas = []) => {
+const needsBcvRate = (idMoneda) => parseCurrency(idMoneda, 'La moneda') === 'Bs';
+
+const validateOfrendas = async (ofrendas = [], tasaBcvDolar = null) => {
   if (!Array.isArray(ofrendas)) {
     throw new AppError('Las ofrendas de colaboracion no son validas.', 400);
   }
@@ -89,20 +98,18 @@ const validateOfrendas = async (ofrendas = []) => {
         const conversion = await convertMoneyToUsd({
           amount: parseMoney(ofrenda.montoOfrenda, `El monto de la ofrenda ${index + 1}`),
           idMoneda: parseCurrency(ofrenda.idMoneda, `La moneda de la ofrenda ${index + 1}`),
+          tasaBcvDolar,
         });
 
         return {
+          nombreOfrenda: parseOptionalText(ofrenda.nombreOfrenda),
           montoOfrenda: conversion.amountUsd,
-          idMoneda: conversion.usdCurrencyId,
-          montoOfrendaOriginal: conversion.originalAmount,
-          idMonedaOriginal: conversion.originalCurrencyId,
-          tasaBcvDolar: conversion.tasaBcvDolar,
         };
       }),
   );
 };
 
-const validateTransferencias = async (transferencias = []) => {
+const validateTransferencias = async (transferencias = [], tasaBcvDolar = null) => {
   if (!Array.isArray(transferencias) || transferencias.length === 0) {
     throw new AppError('Debe registrar al menos una transferencia.', 400);
   }
@@ -118,6 +125,7 @@ const validateTransferencias = async (transferencias = []) => {
           transferencia.idMoneda,
           `La moneda de la transferencia ${index + 1}`,
         ),
+        tasaBcvDolar,
       });
 
       return {
@@ -131,9 +139,6 @@ const validateTransferencias = async (transferencias = []) => {
           `El banco o cuenta de la transferencia ${index + 1}`,
         ),
         montoTransferencia: conversion.amountUsd,
-        montoTransferenciaOriginal: conversion.originalAmount,
-        idMonedaOriginal: conversion.originalCurrencyId,
-        tasaBcvDolar: conversion.tasaBcvDolar,
       };
     }),
   );
@@ -145,19 +150,30 @@ const validateSobrePayload = async (payload) => {
   const montoPactoAmor = parseMoney(payload.montoPactoAmor, 'El monto de pacto de amor', {
     required: false,
   });
+  const ofrendaInputs = payload.ofrendas || [];
+  const transferenciaInputs = payload.transferencias || [];
+  const requiresBcvRate = [
+    payload.idMonedaDiezmo,
+    payload.idMonedaPacto,
+    ...ofrendaInputs.map((ofrenda) => ofrenda?.idMoneda),
+    ...transferenciaInputs.map((transferencia) => transferencia?.idMoneda),
+  ].some((idMoneda) => idMoneda && needsBcvRate(idMoneda));
+  const tasaBcvDolar = requiresBcvRate ? await getTasaBcvDolar() : null;
   const diezmo = await convertMoneyToUsd({
     amount: montoDiezmo,
     idMoneda: parseCurrency(payload.idMonedaDiezmo, 'La moneda del diezmo'),
+    tasaBcvDolar,
   });
   const pacto =
     montoPactoAmor > 0
       ? await convertMoneyToUsd({
           amount: montoPactoAmor,
           idMoneda: parseCurrency(payload.idMonedaPacto, 'La moneda del pacto'),
+          tasaBcvDolar,
         })
       : null;
-  const ofrendas = await validateOfrendas(payload.ofrendas || []);
-  const transferencias = await validateTransferencias(payload.transferencias || []);
+  const ofrendas = await validateOfrendas(ofrendaInputs, tasaBcvDolar);
+  const transferencias = await validateTransferencias(transferenciaInputs, tasaBcvDolar);
   const totalOfrendas = ofrendas.reduce((total, ofrenda) => total + ofrenda.montoOfrenda, 0);
   const totalIncluido = Number((diezmo.amountUsd + (pacto?.amountUsd || 0) + totalOfrendas).toFixed(2));
   const totalTransferencias = Number(
@@ -177,15 +193,7 @@ const validateSobrePayload = async (payload) => {
     idIglesia: parsePositiveInteger(payload.idIglesia, 'La iglesia'),
     idMiembro: parsePositiveInteger(payload.idMiembro, 'El miembro'),
     montoDiezmo: diezmo.amountUsd,
-    idMonedaDiezmo: diezmo.usdCurrencyId,
-    montoDiezmoOriginal: diezmo.originalAmount,
-    idMonedaDiezmoOriginal: diezmo.originalCurrencyId,
-    tasaBcvDiezmo: diezmo.tasaBcvDolar,
     montoPactoAmor: pacto?.amountUsd || 0,
-    idMonedaPacto: pacto?.usdCurrencyId || diezmo.usdCurrencyId,
-    montoPactoAmorOriginal: pacto?.originalAmount || 0,
-    idMonedaPactoOriginal: pacto?.originalCurrencyId || null,
-    tasaBcvPacto: pacto?.tasaBcvDolar || 1,
     totalIncluido,
     ofrendas,
     transferencias,
@@ -201,13 +209,23 @@ export const getSobresByIglesia = async (idIglesia) => {
 };
 
 export const getSobreById = async (idSobre) => {
-  const sobre = await findSobreById(parseId(idSobre));
+  const parsedId = parseId(idSobre);
+  const sobre = await findSobreById(parsedId);
 
   if (!sobre) {
     throw new AppError('Sobre no encontrado.', 404);
   }
 
-  return sobre;
+  const [ofrendas, transferencias] = await Promise.all([
+    findOfrendasBySobreId(parsedId),
+    findTransferenciasBySobreId(parsedId),
+  ]);
+
+  return {
+    ...sobre,
+    ofrendas,
+    transferencias,
+  };
 };
 
 export const getSiguienteNumeroSobre = async (fecha, idIglesia) => {

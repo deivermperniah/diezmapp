@@ -13,6 +13,7 @@ import Dialog from 'primevue/dialog'
 import FloatLabel from 'primevue/floatlabel'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
+import Menu from 'primevue/menu'
 import PanelMenu from 'primevue/panelmenu'
 import Popover from 'primevue/popover'
 import ProgressSpinner from 'primevue/progressspinner'
@@ -51,6 +52,7 @@ app.component('PDialog', Dialog)
 app.component('PFloatLabel', FloatLabel)
 app.component('PInputNumber', InputNumber)
 app.component('PInputText', InputText)
+app.component('PMenu', Menu)
 app.component('PPanelMenu', PanelMenu)
 app.component('PPopover', Popover)
 app.component('PProgressSpinner', ProgressSpinner)

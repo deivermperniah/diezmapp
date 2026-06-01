@@ -1,11 +1,10 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppField from '@/components/ui/AppField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
-import { getConfiguracion } from '@/services/configuracion.service'
 import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getReporteMensual } from '@/services/reportes.service'
 
@@ -24,35 +23,47 @@ const reporte = ref({
   },
 })
 const error = ref('')
-const simboloMoneda = ref('Bs')
 
 const money = (value) =>
-  `${simboloMoneda.value} ${Number(value || 0).toLocaleString('es-VE', {
+  `$ ${Number(value || 0).toLocaleString('es-VE', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
 
 const columns = [
-  { key: 'numeroSobre', label: 'Sobre' },
-  { key: 'nombre', label: 'Nombre' },
-  { key: 'montoDiezmo', label: 'Diezmo' },
-  { key: 'montoPactoAmor', label: 'Pacto amor' },
-  { key: 'otrasOfrendas', label: 'Ofrendas' },
-  { key: 'totalSobre', label: 'Total' },
+  { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
+  { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
+  { key: 'montoDiezmo', label: 'Diezmo', skeletonWidth: '74px' },
+  { key: 'montoPactoAmor', label: 'Pacto amor', skeletonWidth: '74px' },
+  { key: 'otrasOfrendas', label: 'Ofrendas', skeletonWidth: '74px' },
+  { key: 'totalSobre', label: 'Total', skeletonWidth: '74px' },
 ]
+
+const tableRows = computed(() =>
+  reporte.value.items.map((item) => ({
+    ...item,
+    montoDiezmo: money(item.montoDiezmo),
+    montoPactoAmor: money(item.montoPactoAmor),
+    otrasOfrendas: money(item.otrasOfrendas),
+    totalSobre: money(item.totalSobre),
+  })),
+)
+
+const monthlyTotals = computed(() => ({
+  montoDiezmo: money(reporte.value.totals?.totalDiezmos),
+  montoPactoAmor: money(reporte.value.totals?.totalPactoAmor),
+  otrasOfrendas: money(reporte.value.totals?.totalOfrendas),
+  totalSobre: money(reporte.value.totals?.totalGeneral),
+}))
 
 const loadReporte = async () => {
   error.value = ''
   try {
-    const [configuracionData, reporteData] = await Promise.all([
-      getConfiguracion(),
-      getReporteMensual({
-        mes: filtros.mes,
-        anio: filtros.anio,
-      }),
-    ])
+    const reporteData = await getReporteMensual({
+      mes: filtros.mes,
+      anio: filtros.anio,
+    })
 
-    simboloMoneda.value = configuracionData.simboloMonedaPrincipal
     reporte.value = reporteData
   } catch (err) {
     error.value = err.message
@@ -82,7 +93,30 @@ watch(iglesiaActivaId, loadReporte)
           <AppButton type="submit">Consultar</AppButton>
         </div>
       </form>
-      <DataTable :columns="columns" :rows="reporte.items" empty-text="Sin datos mensuales." />
+      <DataTable :columns="columns" :rows="tableRows" empty-text="Sin datos mensuales." />
+      <div class="report-totals">
+        <span>Diezmo: {{ monthlyTotals.montoDiezmo }}</span>
+        <span>Pacto amor: {{ monthlyTotals.montoPactoAmor }}</span>
+        <span>Ofrendas: {{ monthlyTotals.otrasOfrendas }}</span>
+        <strong>Total: {{ monthlyTotals.totalSobre }}</strong>
+      </div>
     </AppPanel>
   </section>
 </template>
+
+<style scoped>
+.report-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 14px;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.report-totals strong {
+  color: var(--color-ink);
+}
+</style>

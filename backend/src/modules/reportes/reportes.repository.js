@@ -4,8 +4,9 @@ export const findReporteSemanal = async ({ fechaInicio, fechaFin, idIglesia }) =
   const result = await query(
     `
       SELECT
+        s.Id_Sobre AS "idSobre",
         s.Numero_Sobre AS "numeroSobre",
-        m.Nombre AS "nombre",
+        CONCAT_WS(' ', m.Nombre, NULLIF(m.Apellido, '')) AS "nombre",
         TO_CHAR(s.Fecha, 'YYYY-MM-DD') AS "fecha",
         s.Total_Incluido::FLOAT AS "totalIncluido",
         COALESCE(o.Total_Ofrendas, 0)::FLOAT AS "totalOfrendas",
@@ -33,8 +34,9 @@ export const findReporteMensual = async ({ mes, anio, idIglesia }) => {
   const result = await query(
     `
       SELECT
+        s.Id_Sobre AS "idSobre",
         s.Numero_Sobre AS "numeroSobre",
-        m.Nombre AS "nombre",
+        CONCAT_WS(' ', m.Nombre, NULLIF(m.Apellido, '')) AS "nombre",
         TO_CHAR(s.Fecha, 'YYYY-MM-DD') AS "fecha",
         s.Monto_Diezmo::FLOAT AS "montoDiezmo",
         COALESCE(s.Monto_Pacto_Amor, 0)::FLOAT AS "montoPactoAmor",

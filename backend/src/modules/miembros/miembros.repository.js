@@ -4,6 +4,8 @@ const miembroSelect = `
   SELECT
     m.Id_Miembro AS "idMiembro",
     m.Nombre AS "nombre",
+    m.Apellido AS "apellido",
+    CONCAT_WS(' ', m.Nombre, NULLIF(m.Apellido, '')) AS "nombreCompleto",
     m.Email AS "email",
     m.Id_Iglesia AS "idIglesia",
     i.Nombre_Iglesia AS "nombreIglesia"
@@ -20,7 +22,7 @@ export const findAllMiembros = async ({ idIglesia } = {}) => {
     `
       ${miembroSelect}
       ${where}
-      ORDER BY m.Nombre ASC
+  ORDER BY m.Nombre ASC, m.Apellido ASC
     `,
     params,
   );
@@ -40,42 +42,58 @@ export const findMiembroById = async (idMiembro) => {
   return result.rows[0] || null;
 };
 
-export const createMiembro = async ({ nombre, email, idIglesia }) => {
+export const createMiembro = async ({ nombre, apellido, email, idIglesia }) => {
   const result = await query(
     `
-      INSERT INTO MIEMBRO (Nombre, Email, Id_Iglesia)
-      VALUES ($1, $2, $3)
+      INSERT INTO MIEMBRO (Nombre, Apellido, Email, Id_Iglesia)
+      VALUES ($1, $2, $3, $4)
       RETURNING
         Id_Miembro AS "idMiembro",
         Nombre AS "nombre",
+        Apellido AS "apellido",
         Email AS "email",
         Id_Iglesia AS "idIglesia"
     `,
-    [nombre, email, idIglesia],
+    [nombre, apellido, email, idIglesia],
   );
 
   return result.rows[0];
 };
 
-export const updateMiembro = async (idMiembro, { nombre, email, idIglesia }) => {
+export const updateMiembro = async (idMiembro, { nombre, apellido, email, idIglesia }) => {
   const result = await query(
     `
       UPDATE MIEMBRO
       SET
         Nombre = $1,
-        Email = $2,
-        Id_Iglesia = $3
-      WHERE Id_Miembro = $4
+        Apellido = $2,
+        Email = $3,
+        Id_Iglesia = $4
+      WHERE Id_Miembro = $5
       RETURNING
         Id_Miembro AS "idMiembro",
         Nombre AS "nombre",
+        Apellido AS "apellido",
         Email AS "email",
         Id_Iglesia AS "idIglesia"
     `,
-    [nombre, email, idIglesia, idMiembro],
+    [nombre, apellido, email, idIglesia, idMiembro],
   );
 
   return result.rows[0] || null;
+};
+
+export const countSobresByMiembro = async (idMiembro) => {
+  const result = await query(
+    `
+      SELECT COUNT(*)::INTEGER AS "totalSobres"
+      FROM SOBRE
+      WHERE Id_Miembro = $1
+    `,
+    [idMiembro],
+  );
+
+  return result.rows[0]?.totalSobres || 0;
 };
 
 export const deleteMiembro = async (idMiembro) => {

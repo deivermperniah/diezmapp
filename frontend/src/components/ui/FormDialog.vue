@@ -7,6 +7,7 @@ defineProps({
   submitLabel: { type: String, required: true },
   saving: { type: Boolean, default: false },
   width: { type: String, default: 'min(560px, 94vw)' },
+  hideFooter: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:visible', 'submit'])
@@ -38,7 +39,7 @@ const close = () => emit('update:visible', false)
       <slot />
     </div>
 
-    <template #footer>
+    <template #footer v-if="!hideFooter">
       <div class="dialog-actions">
         <PButton label="Cancelar" severity="secondary" @click="close" />
         <PButton :label="submitLabel" icon="pi pi-check" :loading="saving" @click="$emit('submit')" />

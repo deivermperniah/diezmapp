@@ -26,9 +26,19 @@ defineProps({
   min: { type: [String, Number], default: null },
   max: { type: [String, Number], default: null },
   step: { type: [String, Number], default: null },
+  placeholder: { type: String, default: null },
+  readonly: { type: Boolean, default: false },
 })
 
-defineEmits(['update:modelValue', 'change'])
+const emit = defineEmits(['update:modelValue', 'change'])
+
+const emitNumberValue = (value) => {
+  emit('update:modelValue', value ?? '')
+}
+
+const emitNumberInput = (event) => {
+  emitNumberValue(event?.value ?? event?.target?.value ?? event?.originalEvent?.target?.value ?? '')
+}
 </script>
 
 <template>
@@ -40,8 +50,11 @@ defineEmits(['update:modelValue', 'change'])
     :max="max === null ? undefined : Number(max)"
     :min-fraction-digits="step === '0.01' || step === 0.01 ? 2 : 0"
     :max-fraction-digits="step === '0.01' || step === 0.01 ? 2 : 0"
+    :placeholder="placeholder"
+    :readonly="readonly"
     fluid
-    @update:model-value="$emit('update:modelValue', $event ?? '')"
+    @input="emitNumberInput"
+    @update:model-value="emitNumberValue"
     @change="$emit('change', $event)"
   />
   <PDatePicker
@@ -60,6 +73,8 @@ defineEmits(['update:modelValue', 'change'])
     :model-value="modelValue"
     :type="type"
     :required="required"
+    :placeholder="placeholder"
+    :readonly="readonly"
     fluid
     @update:model-value="$emit('update:modelValue', $event)"
     @change="$emit('change', $event)"

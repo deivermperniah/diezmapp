@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
@@ -20,13 +20,15 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const selectedMember = ref(null)
 const saving = ref(false)
+const optionsMenu = ref(null)
+const selectedMenuRow = ref(null)
 const confirm = useConfirm()
 const toast = useToast()
 
 const columns = [
-  { key: 'nombre', label: 'Nombre' },
-  { key: 'email', label: 'Email' },
-  { key: 'nombreIglesia', label: 'Iglesia' },
+  { key: 'nombre', label: 'Nombre', width: '190px', skeletonWidth: '82px' },
+  { key: 'apellido', label: 'Apellido', width: '190px', skeletonWidth: '82px' },
+  { key: 'email', label: 'Email', skeletonWidth: '150px' },
 ]
 
 const loadData = async ({ showLoading = true } = {}) => {
@@ -63,6 +65,26 @@ const openEdit = (row) => {
   dialogVisible.value = true
 }
 
+const optionItems = computed(() => [
+  {
+    label: 'Editar',
+    icon: 'pi pi-pencil',
+    class: 'menu-item-edit',
+    command: () => openEdit(selectedMenuRow.value),
+  },
+  {
+    label: 'Eliminar',
+    icon: 'pi pi-trash',
+    class: 'menu-item-danger',
+    command: () => removeRow(selectedMenuRow.value),
+  },
+])
+
+const toggleOptions = (event, row) => {
+  selectedMenuRow.value = row
+  optionsMenu.value.toggle(event)
+}
+
 const saveMember = async (payload) => {
   saving.value = true
   try {
@@ -97,7 +119,7 @@ const saveMember = async (payload) => {
 const removeRow = (row) => {
   confirm.require({
     header: 'Eliminar miembro',
-    message: `Seguro que deseas eliminar a ${row.nombre}?`,
+    message: `Seguro que deseas eliminar a ${row.nombreCompleto || row.nombre}?`,
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: 'Cancelar',
     rejectClass: 'p-button-secondary p-button-outlined',
@@ -127,7 +149,13 @@ watch(iglesiaActivaId, loadData)
 
 <template>
   <section class="page">
-    <DataTable :columns="columns" :rows="miembros" :loading="loading" empty-text="Aun no hay miembros registrados.">
+    <DataTable
+      :columns="columns"
+      :rows="miembros"
+      :loading="loading"
+      actions-width="76px"
+      empty-text="Aun no hay miembros registrados."
+    >
       <template #toolbarStart>
         <div class="button-row">
           <PButton icon="pi pi-refresh" severity="secondary" outlined :loading="loading" @click="loadData" />
@@ -136,16 +164,15 @@ watch(iglesiaActivaId, loadData)
       </template>
       <template #actions="{ row }">
         <div class="button-row actions">
-          <PButton icon="pi pi-pencil" severity="secondary" outlined size="small" @click="openEdit(row)" />
-          <PButton icon="pi pi-trash" severity="danger" outlined size="small" @click="removeRow(row)" />
+          <PButton v-tooltip.top="'Opciones'" icon="pi pi-ellipsis-v" severity="secondary" outlined size="small" @click="toggleOptions($event, row)" />
         </div>
       </template>
     </DataTable>
+    <PMenu ref="optionsMenu" :model="optionItems" popup />
 
     <MemberFormDialog
       v-model:visible="dialogVisible"
       :member="selectedMember"
-      :iglesias="iglesias"
       :default-iglesia="getIglesiaActivaId()"
       :saving="saving"
       @save="saveMember"

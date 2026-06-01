@@ -6,6 +6,8 @@ const currencies = [
 ];
 
 const BCV_RATE_URL = process.env.BCV_RATE_URL || 'https://ve.dolarapi.com/v1/dolares/oficial';
+const RATE_CACHE_TTL_MS = 5 * 60 * 1000;
+let cachedRate = null;
 
 const getCurrencyById = (idMoneda) => {
   const value = String(idMoneda || '').trim();
@@ -17,6 +19,13 @@ export const getUsdCurrency = async () => {
 };
 
 export const getTasaDolarOficial = async () => {
+  if (cachedRate && Date.now() - cachedRate.cachedAt < RATE_CACHE_TTL_MS) {
+    return {
+      valor: cachedRate.valor,
+      fechaActualizacion: cachedRate.fechaActualizacion,
+    };
+  }
+
   let response;
 
   try {
@@ -41,9 +50,15 @@ export const getTasaDolarOficial = async () => {
     throw new AppError('La API externa no devolvio una tasa BCV valida.', 502);
   }
 
-  return {
+  cachedRate = {
     valor,
     fechaActualizacion,
+    cachedAt: Date.now(),
+  };
+
+  return {
+    valor: cachedRate.valor,
+    fechaActualizacion: cachedRate.fechaActualizacion,
   };
 };
 
@@ -52,7 +67,7 @@ export const getTasaBcvDolar = async () => {
   return tasa.valor;
 };
 
-export const convertMoneyToUsd = async ({ amount, idMoneda }) => {
+export const convertMoneyToUsd = async ({ amount, idMoneda, tasaBcvDolar }) => {
   const currency = await getCurrencyById(idMoneda);
 
   if (!currency) {
@@ -73,14 +88,14 @@ export const convertMoneyToUsd = async ({ amount, idMoneda }) => {
   }
 
   if (simbolo === 'Bs') {
-    const tasaBcvDolar = await getTasaBcvDolar();
+    const tasa = tasaBcvDolar || (await getTasaBcvDolar());
 
     return {
-      amountUsd: Number((amount / tasaBcvDolar).toFixed(2)),
+      amountUsd: Number((amount / tasa).toFixed(2)),
       originalAmount: Number(amount.toFixed(2)),
       originalCurrencyId: currency.idMoneda,
       usdCurrencyId: usdCurrency.idMoneda,
-      tasaBcvDolar,
+      tasaBcvDolar: tasa,
     };
   }
 

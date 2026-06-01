@@ -15,8 +15,7 @@ const showActiveChurch = computed(() => route.name !== 'configuracion')
     </div>
     <div v-if="showActiveChurch" class="active-church">
       <i class="pi pi-building" aria-hidden="true"></i>
-      <span>Iglesia</span>
-      <strong>{{ iglesiaActivaNombre || 'Sin seleccionar' }}</strong>
+      <span>Iglesia&nbsp;<strong>{{ iglesiaActivaNombre || 'Sin seleccionar' }}</strong></span>
     </div>
   </header>
 </template>
@@ -44,10 +43,10 @@ h1 {
   display: inline-flex;
   align-items: center;
   min-width: 0;
-  gap: 8px;
+  gap: 6px;
   margin-left: auto;
   min-height: 36px;
-  padding: 6px 11px;
+  padding: 6px 10px;
   border: 1px solid #bfdbfe;
   border-radius: 8px;
   background: #eff6ff;
@@ -62,15 +61,15 @@ h1 {
 
 .active-church span {
   color: var(--color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .active-church strong {
-  overflow: hidden;
   max-width: 260px;
   color: var(--color-primary);
   font-weight: 900;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 @media (max-width: 860px) {

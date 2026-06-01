@@ -10,24 +10,20 @@ const sobreSelect = `
     s.Anio AS "anio",
     s.Id_Iglesia AS "idIglesia",
     s.Id_Miembro AS "idMiembro",
-    m.Nombre AS "nombreMiembro",
-    s.Monto_Diezmo AS "montoDiezmo",
-    s.Id_Moneda_Diezmo AS "idMonedaDiezmo",
-    s.Id_Moneda_Diezmo AS "simboloMonedaDiezmo",
-    s.Monto_Diezmo_Original AS "montoDiezmoOriginal",
-    s.Id_Moneda_Diezmo_Original AS "idMonedaDiezmoOriginal",
-    s.Id_Moneda_Diezmo_Original AS "simboloMonedaDiezmoOriginal",
-    s.Tasa_Bcv_Diezmo::FLOAT AS "tasaBcvDiezmo",
-    s.Monto_Pacto_Amor AS "montoPactoAmor",
-    s.Id_Moneda_Pacto AS "idMonedaPacto",
-    s.Id_Moneda_Pacto AS "simboloMonedaPacto",
-    s.Monto_Pacto_Amor_Original AS "montoPactoAmorOriginal",
-    s.Id_Moneda_Pacto_Original AS "idMonedaPactoOriginal",
-    s.Id_Moneda_Pacto_Original AS "simboloMonedaPactoOriginal",
-    s.Tasa_Bcv_Pacto::FLOAT AS "tasaBcvPacto",
-    s.Total_Incluido AS "totalIncluido"
+    CONCAT_WS(' ', m.Nombre, NULLIF(m.Apellido, '')) AS "nombreMiembro",
+    s.Monto_Diezmo::FLOAT AS "montoDiezmo",
+    COALESCE(s.Monto_Pacto_Amor, 0)::FLOAT AS "montoPactoAmor",
+    COALESCE(o.Total_Ofrendas, 0)::FLOAT AS "totalOfrendas",
+    s.Total_Incluido::FLOAT AS "totalIncluido"
   FROM SOBRE s
   INNER JOIN MIEMBRO m ON m.Id_Miembro = s.Id_Miembro
+  LEFT JOIN (
+    SELECT
+      Id_Sobre,
+      SUM(Monto_Ofrenda) AS Total_Ofrendas
+    FROM OFRENDA_COLABORACION
+    GROUP BY Id_Sobre
+  ) o ON o.Id_Sobre = s.Id_Sobre
 `;
 
 export const findAllSobres = async ({ idIglesia } = {}) => {
@@ -80,15 +76,7 @@ export const createSobre = async ({
   idIglesia,
   idMiembro,
   montoDiezmo,
-  idMonedaDiezmo,
-  montoDiezmoOriginal,
-  idMonedaDiezmoOriginal,
-  tasaBcvDiezmo,
   montoPactoAmor,
-  idMonedaPacto,
-  montoPactoAmorOriginal,
-  idMonedaPactoOriginal,
-  tasaBcvPacto,
   totalIncluido,
   ofrendas = [],
   transferencias = [],
@@ -119,18 +107,10 @@ export const createSobre = async ({
           Id_Iglesia,
           Id_Miembro,
           Monto_Diezmo,
-          Id_Moneda_Diezmo,
-          Monto_Diezmo_Original,
-          Id_Moneda_Diezmo_Original,
-          Tasa_Bcv_Diezmo,
           Monto_Pacto_Amor,
-          Id_Moneda_Pacto,
-          Monto_Pacto_Amor_Original,
-          Id_Moneda_Pacto_Original,
-          Tasa_Bcv_Pacto,
           Total_Incluido
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING Id_Sobre AS "idSobre"
       `,
       [
@@ -141,15 +121,7 @@ export const createSobre = async ({
         idIglesia,
         idMiembro,
         montoDiezmo,
-        idMonedaDiezmo,
-        montoDiezmoOriginal,
-        idMonedaDiezmoOriginal,
-        tasaBcvDiezmo,
         montoPactoAmor,
-        idMonedaPacto,
-        montoPactoAmorOriginal,
-        idMonedaPactoOriginal,
-        tasaBcvPacto,
         totalIncluido,
       ],
     );
@@ -160,21 +132,15 @@ export const createSobre = async ({
         `
           INSERT INTO OFRENDA_COLABORACION (
             Id_Sobre,
-            Monto_Ofrenda,
-            Id_Moneda,
-            Monto_Ofrenda_Original,
-            Id_Moneda_Original,
-            Tasa_Bcv_Dolar
+            Nombre_Ofrenda,
+            Monto_Ofrenda
           )
-          VALUES ($1, $2, $3, $4, $5, $6)
+          VALUES ($1, $2, $3)
         `,
         [
           idSobre,
+          ofrenda.nombreOfrenda,
           ofrenda.montoOfrenda,
-          ofrenda.idMoneda,
-          ofrenda.montoOfrendaOriginal,
-          ofrenda.idMonedaOriginal,
-          ofrenda.tasaBcvDolar,
         ],
       );
     }
@@ -187,12 +153,9 @@ export const createSobre = async ({
             Fecha_Transferencia,
             Numero_Transferencia,
             Banco_Receptor_Cuenta,
-            Monto_Transferencia,
-            Monto_Transferencia_Original,
-            Id_Moneda_Original,
-            Tasa_Bcv_Dolar
+            Monto_Transferencia
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          VALUES ($1, $2, $3, $4, $5)
         `,
         [
           idSobre,
@@ -200,9 +163,6 @@ export const createSobre = async ({
           transferencia.numeroTransferencia,
           transferencia.bancoReceptorCuenta,
           transferencia.montoTransferencia,
-          transferencia.montoTransferenciaOriginal,
-          transferencia.idMonedaOriginal,
-          transferencia.tasaBcvDolar,
         ],
       );
     }
@@ -227,15 +187,7 @@ export const updateSobre = async (
     idIglesia,
     idMiembro,
     montoDiezmo,
-    idMonedaDiezmo,
-    montoDiezmoOriginal,
-    idMonedaDiezmoOriginal,
-    tasaBcvDiezmo,
     montoPactoAmor,
-    idMonedaPacto,
-    montoPactoAmorOriginal,
-    idMonedaPactoOriginal,
-    tasaBcvPacto,
     totalIncluido,
     ofrendas = [],
     transferencias = [],
@@ -256,17 +208,9 @@ export const updateSobre = async (
           Id_Iglesia = $4,
           Id_Miembro = $5,
           Monto_Diezmo = $6,
-          Id_Moneda_Diezmo = $7,
-          Monto_Diezmo_Original = $8,
-          Id_Moneda_Diezmo_Original = $9,
-          Tasa_Bcv_Diezmo = $10,
-          Monto_Pacto_Amor = $11,
-          Id_Moneda_Pacto = $12,
-          Monto_Pacto_Amor_Original = $13,
-          Id_Moneda_Pacto_Original = $14,
-          Tasa_Bcv_Pacto = $15,
-          Total_Incluido = $16
-        WHERE Id_Sobre = $17
+          Monto_Pacto_Amor = $7,
+          Total_Incluido = $8
+        WHERE Id_Sobre = $9
         RETURNING Id_Sobre AS "idSobre"
       `,
       [
@@ -276,15 +220,7 @@ export const updateSobre = async (
         idIglesia,
         idMiembro,
         montoDiezmo,
-        idMonedaDiezmo,
-        montoDiezmoOriginal,
-        idMonedaDiezmoOriginal,
-        tasaBcvDiezmo,
         montoPactoAmor,
-        idMonedaPacto,
-        montoPactoAmorOriginal,
-        idMonedaPactoOriginal,
-        tasaBcvPacto,
         totalIncluido,
         idSobre,
       ],
@@ -303,21 +239,15 @@ export const updateSobre = async (
         `
           INSERT INTO OFRENDA_COLABORACION (
             Id_Sobre,
-            Monto_Ofrenda,
-            Id_Moneda,
-            Monto_Ofrenda_Original,
-            Id_Moneda_Original,
-            Tasa_Bcv_Dolar
+            Nombre_Ofrenda,
+            Monto_Ofrenda
           )
-          VALUES ($1, $2, $3, $4, $5, $6)
+          VALUES ($1, $2, $3)
         `,
         [
           idSobre,
+          ofrenda.nombreOfrenda,
           ofrenda.montoOfrenda,
-          ofrenda.idMoneda,
-          ofrenda.montoOfrendaOriginal,
-          ofrenda.idMonedaOriginal,
-          ofrenda.tasaBcvDolar,
         ],
       );
     }
@@ -330,12 +260,9 @@ export const updateSobre = async (
             Fecha_Transferencia,
             Numero_Transferencia,
             Banco_Receptor_Cuenta,
-            Monto_Transferencia,
-            Monto_Transferencia_Original,
-            Id_Moneda_Original,
-            Tasa_Bcv_Dolar
+            Monto_Transferencia
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          VALUES ($1, $2, $3, $4, $5)
         `,
         [
           idSobre,
@@ -343,9 +270,6 @@ export const updateSobre = async (
           transferencia.numeroTransferencia,
           transferencia.bancoReceptorCuenta,
           transferencia.montoTransferencia,
-          transferencia.montoTransferenciaOriginal,
-          transferencia.idMonedaOriginal,
-          transferencia.tasaBcvDolar,
         ],
       );
     }
