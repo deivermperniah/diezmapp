@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getTransferencias } from '@/services/transferencias.service'
+import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
 const transferencias = ref([])
@@ -27,6 +28,7 @@ const columns = [
 const tableRows = computed(() =>
   transferencias.value.map((transferencia) => ({
     ...transferencia,
+    fechaTransferencia: formatDateEs(transferencia.fechaTransferencia),
     montoTransferencia: money(transferencia.montoTransferencia),
   })),
 )

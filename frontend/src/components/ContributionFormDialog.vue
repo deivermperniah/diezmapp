@@ -5,6 +5,7 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import FormDialog from '@/components/ui/FormDialog.vue'
 import { getTasaDolar } from '@/services/configuracion.service'
+import { toLocalDateString } from '@/utils/date'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -18,11 +19,24 @@ const props = defineProps({
 
 const emit = defineEmits(['update:visible', 'save', 'date-change', 'create-member', 'clear-miembro-seleccionado'])
 
-const today = new Date().toISOString().slice(0, 10)
+const today = toLocalDateString()
 const createKey = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
+const toLocalDate = (value) => {
+  const [year, month, day] = String(value || today).split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
 
 const currentStep = ref(1)
 const tasaDolar = ref(null)
+
+const fechaSobreDate = computed({
+  get: () => toLocalDate(form.fecha),
+  set: (value) => {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return
+    form.fecha = toLocalDateString(value)
+    emit('date-change', form.fecha)
+  },
+})
 
 const steps = [
   { id: 1, label: 'Datos generales', icon: 'pi pi-id-card' },
@@ -122,6 +136,8 @@ const selectedCurrencyLabel = computed(() => {
 
 const isBolivarSelected = computed(() => selectedCurrencyLabel.value === 'Bs' || selectedCurrencyLabel.value === 'Bs.')
 const hasValidRate = computed(() => !isBolivarSelected.value || Number(tasaDolar.value || 0) > 0)
+const submitButtonLabel = computed(() => (props.sobre ? 'Guardar cambios' : 'Guardar sobre'))
+const submitButtonIcon = computed(() => (props.sobre ? 'pi pi-check' : 'pi pi-check'))
 const amountLabel = (label) => `${label} (${selectedCurrencyLabel.value})`
 const formatUsd = (value) =>
   Number(value || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -331,7 +347,14 @@ const submit = () => {
             </AppField>
 
             <AppField id="fecha" label="Fecha">
-              <AppInput id="fecha" v-model="form.fecha" type="date" @change="$emit('date-change', form.fecha)" />
+              <PDatePicker
+                input-id="fecha"
+                v-model="fechaSobreDate"
+                date-format="dd/mm/yy"
+                show-icon
+                :manual-input="false"
+                fluid
+              />
             </AppField>
           </div>
 
@@ -396,7 +419,7 @@ const submit = () => {
             </div>
 
             <div v-for="(ofrenda, index) in form.ofrendas" :key="ofrenda.key" class="line-grid amount-line">
-              <div class="offering-fields">
+              <div :class="['offering-fields', { dollar: !isBolivarSelected }]">
                 <AppField :id="`nombre-ofrenda-${ofrenda.key}`" label="Nombre">
                   <AppInput
                     :id="`nombre-ofrenda-${ofrenda.key}`"
@@ -432,7 +455,7 @@ const submit = () => {
             </div>
 
             <div v-for="(transferencia, index) in form.transferencias" :key="transferencia.key" class="transfer-line">
-              <div class="transfer-fields">
+              <div :class="['transfer-fields', { dollar: !isBolivarSelected }]">
                 <AppField :id="`fecha-transferencia-${transferencia.key}`" label="Fecha">
                   <AppInput :id="`fecha-transferencia-${transferencia.key}`" v-model="transferencia.fechaTransferencia" type="date" />
                 </AppField>
@@ -488,7 +511,7 @@ const submit = () => {
         <div class="step-actions">
           <PButton v-if="currentStep > 1" label="Anterior" severity="secondary" outlined @click="prevStep" />
           <PButton v-if="currentStep < 4" label="Siguiente" :disabled="!canGoNext" @click="nextStep" />
-          <PButton v-if="currentStep === 4" label="Guardar sobre" :disabled="!canSubmit" @click="submit" />
+          <PButton v-if="currentStep === 4" :label="submitButtonLabel" :icon="submitButtonIcon" :disabled="!canSubmit" @click="submit" />
         </div>
       </div>
     </div>
@@ -649,11 +672,26 @@ const submit = () => {
   grid-column: 1 / -1;
 }
 
+.offering-fields.dollar {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.75fr) 42px;
+  align-items: end;
+}
+
+.offering-fields.dollar .field:first-child {
+  grid-column: 1;
+}
+
 .offering-fields .p-button {
   grid-column: 3;
   grid-row: 2;
   align-self: start;
   margin-top: 26px;
+}
+
+.offering-fields.dollar .p-button {
+  grid-row: 1;
+  align-self: end;
+  margin-top: 0;
 }
 
 .transfer-line {
@@ -707,6 +745,23 @@ const submit = () => {
   grid-row: 3;
   align-self: start;
   margin-top: 26px;
+}
+
+.transfer-fields.dollar .field:nth-child(3) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.transfer-fields.dollar .field:nth-child(4) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.transfer-fields.dollar .p-button {
+  grid-column: 3;
+  grid-row: 2;
+  align-self: end;
+  margin-top: 0;
 }
 
 .totals-strip {

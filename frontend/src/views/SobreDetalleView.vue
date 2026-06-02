@@ -6,6 +6,7 @@ import StatCard from '@/components/StatCard.vue'
 import { getOfrendasBySobre } from '@/services/ofrendas.service'
 import { getSobre } from '@/services/sobres.service'
 import { getTransferenciasBySobre } from '@/services/transferencias.service'
+import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
 const route = useRoute()
@@ -19,19 +20,6 @@ const money = (value) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
-
-const formatDate = (value) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat('es-VE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date)
-}
 
 const totalOfrendas = computed(() =>
   sobre.value?.ofrendas?.reduce((total, ofrenda) => total + Number(ofrenda.montoOfrenda || 0), 0) || 0,
@@ -67,7 +55,7 @@ const ofrendaRows = computed(() =>
 const transferenciaRows = computed(() =>
   (sobre.value?.transferencias || []).map((transferencia) => ({
     ...transferencia,
-    fechaTransferencia: formatDate(transferencia.fechaTransferencia),
+    fechaTransferencia: formatDateEs(transferencia.fechaTransferencia),
     montoTransferencia: money(transferencia.montoTransferencia),
   })),
 )
@@ -113,7 +101,7 @@ onMounted(loadSobre)
           <span class="eyebrow">Sobre #{{ sobre.numeroSobre }}</span>
           <h2>{{ sobre.nombreMiembro }}</h2>
         </div>
-        <span class="detail-date">{{ formatDate(sobre.fecha) }}</span>
+        <span class="detail-date">{{ formatDateEs(sobre.fecha) }}</span>
       </div>
 
       <div class="grid grid-3">

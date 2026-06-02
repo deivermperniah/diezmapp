@@ -7,13 +7,14 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getReporteSemanal } from '@/services/reportes.service'
+import { formatDateEs, toLocalDateString } from '@/utils/date'
 
-const today = new Date().toISOString().slice(0, 10)
+const today = toLocalDateString()
 const start = new Date()
 start.setDate(start.getDate() - 6)
 
 const filtros = reactive({
-  fechaInicio: start.toISOString().slice(0, 10),
+  fechaInicio: toLocalDateString(start),
   fechaFin: today,
 })
 
@@ -36,6 +37,7 @@ const columns = [
 const tableRows = computed(() =>
   reporte.value.items.map((item) => ({
     ...item,
+    fecha: formatDateEs(item.fecha),
     totalSobre: money(item.totalSobre),
   })),
 )

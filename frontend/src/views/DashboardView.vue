@@ -11,6 +11,7 @@ import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.s
 import { getMiembros } from '@/services/miembros.service'
 import { getReporteMensual } from '@/services/reportes.service'
 import { deleteSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
+import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
 const loading = ref(true)
@@ -45,19 +46,21 @@ const totalGeneral = computed(() =>
 
 const columns = [
   { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
-  { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
   { key: 'fecha', label: 'Fecha', skeletonWidth: '86px' },
+  { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
   { key: 'totalSobre', label: 'Total', skeletonWidth: '74px' },
 ]
 
 const tableRows = computed(() =>
-  sobres.value.map((sobre) => ({
-    idSobre: sobre.idSobre,
-    numeroSobre: sobre.numeroSobre,
-    nombre: sobre.nombreMiembro,
-    fecha: sobre.fecha,
-    totalSobre: money(sobre.totalIncluido),
-  })),
+  sobres.value
+    .slice(0, 10)
+    .map((sobre) => ({
+      idSobre: sobre.idSobre,
+      numeroSobre: sobre.numeroSobre,
+      nombre: sobre.nombreMiembro,
+      fecha: formatDateEs(sobre.fecha),
+      totalSobre: money(sobre.totalIncluido),
+    })),
 )
 
 const loadDashboard = async () => {

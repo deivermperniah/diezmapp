@@ -61,8 +61,9 @@ const emitNumberInput = (event) => {
     v-else-if="type === 'date'"
     :input-id="id"
     :model-value="toDate(modelValue)"
-    date-format="yy-mm-dd"
+    date-format="dd/mm/yy"
     show-icon
+    :manual-input="false"
     fluid
     @update:model-value="$emit('update:modelValue', toDateString($event))"
     @date-select="$emit('change', toDateString($event))"

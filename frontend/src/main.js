@@ -40,6 +40,33 @@ app.use(PrimeVue, {
       darkModeSelector: false,
     },
   },
+  locale: {
+    firstDayOfWeek: 1,
+    dayNames: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+    dayNamesShort: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
+    dayNamesMin: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+    monthNames: [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ],
+    monthNamesShort: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+    today: 'Hoy',
+    clear: 'Limpiar',
+    weekHeader: 'Sem',
+    emptySearchMessage: 'No se encontraron resultados',
+    emptyFilterMessage: 'No se encontraron resultados',
+    emptyMessage: 'Sin registros disponibles',
+  },
 })
 app.use(ToastService)
 app.use(ConfirmationService)

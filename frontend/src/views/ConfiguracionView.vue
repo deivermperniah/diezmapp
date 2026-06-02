@@ -15,6 +15,7 @@ import {
   getIglesiaActivaId,
   setIglesiaActivaId,
 } from '@/services/iglesia-activa.service'
+import { formatDateTimeEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
 const toast = useToast()
@@ -86,26 +87,7 @@ const formatRate = (value) =>
         maximumFractionDigits: 2,
       })
 
-const formatDate = (value) => {
-  if (!value) return 'Sin fecha'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Sin fecha'
-
-  const datePart = new Intl.DateTimeFormat('es-VE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'America/Caracas',
-  }).format(date)
-  const timePart = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'America/Caracas',
-  }).format(date).toLowerCase()
-
-  return `${datePart} ${timePart}`
-}
+const formatDate = (value) => formatDateTimeEs(value) || 'Sin fecha'
 
 const loadTasaDolar = async () => {
   loadingTasa.value = true

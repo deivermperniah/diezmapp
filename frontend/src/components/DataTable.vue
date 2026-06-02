@@ -110,7 +110,7 @@ const getSkeletonWidth = (column) => {
         <template #body="{ data }">
           <PSkeleton v-if="visibleLoading" height="1rem" :width="getSkeletonWidth(column)" />
           <PTag v-else-if="column.variant === 'tag' && data[column.key]" :value="data[column.key]" severity="success" />
-          <span v-else>{{ data[column.key] }}</span>
+          <span v-else class="cell-text">{{ data[column.key] }}</span>
         </template>
       </Column>
       <Column
@@ -182,6 +182,14 @@ const getSkeletonWidth = (column) => {
 .app-data-table :deep(.p-datatable-tbody > tr > td) {
   height: 44px;
   vertical-align: middle;
+}
+
+.app-data-table :deep(.cell-text) {
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-data-table :deep(.actions-header),

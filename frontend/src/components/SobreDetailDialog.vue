@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { getOfrendasBySobre } from '@/services/ofrendas.service'
 import { getSobre } from '@/services/sobres.service'
 import { getTransferenciasBySobre } from '@/services/transferencias.service'
+import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
 const props = defineProps({
@@ -21,19 +22,6 @@ const money = (value) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
-
-const formatDate = (value) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat('es-VE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date)
-}
 
 const totalOfrendas = computed(() =>
   sobre.value?.ofrendas?.reduce((total, ofrenda) => total + Number(ofrenda.montoOfrenda || 0), 0) || 0,
@@ -141,7 +129,7 @@ watch(() => [props.visible, props.idSobre], loadSobre, { immediate: true })
         </div>
         <div class="receipt-meta-line">
           <span>Fecha:</span>
-          <strong>{{ formatDate(sobre.fecha) }}</strong>
+          <strong>{{ formatDateEs(sobre.fecha) }}</strong>
         </div>
       </header>
 

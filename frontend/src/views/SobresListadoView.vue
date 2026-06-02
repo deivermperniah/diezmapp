@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import { getSobres } from '@/services/sobres.service'
 import { iglesiaActivaId } from '@/services/iglesia-activa.service'
+import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
 const sobres = ref([])
@@ -27,6 +28,7 @@ const money = (value) =>
 const tableRows = computed(() =>
   sobres.value.map((sobre) => ({
     ...sobre,
+    fecha: formatDateEs(sobre.fecha),
     montoDiezmo: money(sobre.montoDiezmo),
     montoPactoAmor: money(sobre.montoPactoAmor),
     totalIncluido: money(sobre.totalIncluido),

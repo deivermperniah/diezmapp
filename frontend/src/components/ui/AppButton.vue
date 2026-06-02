@@ -5,6 +5,7 @@ defineProps({
   size: { type: String, default: 'md' },
   icon: { type: String, default: '' },
   label: { type: String, default: '' },
+  disabled: { type: Boolean, default: false },
 })
 </script>
 
@@ -16,6 +17,7 @@ defineProps({
     :size="size === 'sm' ? 'small' : undefined"
     :icon="icon || undefined"
     :label="label || undefined"
+    :disabled="disabled"
     class="app-button"
   >
     <slot />

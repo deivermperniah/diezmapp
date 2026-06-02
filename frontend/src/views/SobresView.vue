@@ -10,9 +10,10 @@ import { getIglesias, getMonedas } from '@/services/catalogos.service'
 import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { createMiembro, getMiembros } from '@/services/miembros.service'
 import { createSobre, deleteSobre, getSiguienteNumeroSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
+import { formatDateEs, toLocalDateString } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
-const today = new Date().toISOString().slice(0, 10)
+const today = toLocalDateString()
 const miembros = ref([])
 const monedas = ref([])
 const iglesias = ref([])
@@ -36,9 +37,6 @@ const columns = [
   { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
   { key: 'fecha', label: 'Fecha', skeletonWidth: '86px' },
   { key: 'nombreMiembro', label: 'Miembro', skeletonWidth: '130px' },
-  { key: 'montoDiezmo', label: 'Diezmo', skeletonWidth: '74px' },
-  { key: 'montoPactoAmor', label: 'Pacto amor', skeletonWidth: '74px' },
-  { key: 'totalOfrendas', label: 'Ofrendas', skeletonWidth: '74px' },
   { key: 'totalIncluido', label: 'Total', skeletonWidth: '74px' },
 ]
 
@@ -51,9 +49,7 @@ const money = (value) =>
 const tableRows = computed(() =>
   sobres.value.map((sobre) => ({
     ...sobre,
-    montoDiezmo: money(sobre.montoDiezmo),
-    montoPactoAmor: money(sobre.montoPactoAmor),
-    totalOfrendas: money(sobre.totalOfrendas),
+    fecha: formatDateEs(sobre.fecha),
     totalIncluido: money(sobre.totalIncluido),
   })),
 )

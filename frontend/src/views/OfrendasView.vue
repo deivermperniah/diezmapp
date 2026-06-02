@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getOfrendas } from '@/services/ofrendas.service'
+import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
 const ofrendas = ref([])
@@ -26,6 +27,7 @@ const columns = [
 const tableRows = computed(() =>
   ofrendas.value.map((ofrenda) => ({
     ...ofrenda,
+    fechaSobre: formatDateEs(ofrenda.fechaSobre),
     nombreOfrenda: ofrenda.nombreOfrenda || '-',
     montoOfrenda: money(ofrenda.montoOfrenda),
   })),

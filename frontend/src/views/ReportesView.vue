@@ -1,20 +1,23 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppField from '@/components/ui/AppField.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getReporteMensual, getReporteSemanal } from '@/services/reportes.service'
+import { formatDateEs, toLocalDateString } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
-const today = new Date().toISOString().slice(0, 10)
+const toast = useToast()
+const today = toLocalDateString()
 const start = new Date()
 start.setDate(start.getDate() - 6)
 
 const tipoReporte = ref('mensual')
 const filtros = reactive({
-  fechaInicio: start.toISOString().slice(0, 10),
+  fechaInicio: toLocalDateString(start),
   fechaFin: today,
   mes: new Date().getMonth() + 1,
   anio: new Date().getFullYear(),
@@ -24,6 +27,7 @@ const reporte = ref({ items: [], totals: { totalGeneral: 0 } })
 const error = ref('')
 const loading = ref(false)
 const consulted = ref(false)
+const exportInfoVisible = ref(false)
 
 const tiposReporte = [
   { label: 'Mensual', value: 'mensual' },
@@ -46,7 +50,11 @@ const fechaInicioSemanal = computed({
   },
   set: (value) => {
     if (!(value instanceof Date) || Number.isNaN(value.getTime())) return
-    filtros.fechaInicio = toDateString(value)
+    const weekEnd = new Date(value)
+    weekEnd.setDate(weekEnd.getDate() + 6)
+
+    filtros.fechaInicio = toLocalDateString(value)
+    filtros.fechaFin = toLocalDateString(weekEnd)
   },
 })
 
@@ -57,16 +65,13 @@ const fechaFinSemanal = computed({
   },
   set: (value) => {
     if (!(value instanceof Date) || Number.isNaN(value.getTime())) return
-    filtros.fechaFin = toDateString(value)
+    const weekStart = new Date(value)
+    weekStart.setDate(weekStart.getDate() - 6)
+
+    filtros.fechaInicio = toLocalDateString(weekStart)
+    filtros.fechaFin = toLocalDateString(value)
   },
 })
-
-const toDateString = (date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
 
 const money = (value) =>
   `$ ${Number(value || 0).toLocaleString('es-VE', {
@@ -74,36 +79,15 @@ const money = (value) =>
     maximumFractionDigits: 2,
   })}`
 
-const formatDate = (value) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat('es-VE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date)
-}
-
-const semanalColumns = [
+const reportColumns = [
   { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
-  { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
   { key: 'fecha', label: 'Fecha', skeletonWidth: '86px' },
-  { key: 'totalSobre', label: 'Total', skeletonWidth: '74px' },
-]
-
-const mensualColumns = [
-  { key: 'numeroSobre', label: 'Sobre', skeletonWidth: '38px' },
   { key: 'nombre', label: 'Miembro', skeletonWidth: '130px' },
-  { key: 'montoDiezmo', label: 'Diezmo', skeletonWidth: '74px' },
-  { key: 'montoPactoAmor', label: 'Pacto amor', skeletonWidth: '74px' },
-  { key: 'otrasOfrendas', label: 'Ofrendas', skeletonWidth: '74px' },
   { key: 'totalSobre', label: 'Total', skeletonWidth: '74px' },
 ]
 
-const columns = computed(() => (tipoReporte.value === 'semanal' ? semanalColumns : mensualColumns))
+const columns = computed(() => reportColumns)
+const hasRecords = computed(() => tableRows.value.length > 0)
 const emptyText = computed(() =>
   consulted.value
     ? tipoReporte.value === 'semanal'
@@ -115,7 +99,7 @@ const emptyText = computed(() =>
 const tableRows = computed(() =>
   reporte.value.items.map((item) => ({
     ...item,
-    fecha: formatDate(item.fecha),
+    fecha: formatDateEs(item.fecha),
     montoDiezmo: money(item.montoDiezmo),
     montoPactoAmor: money(item.montoPactoAmor),
     otrasOfrendas: money(item.otrasOfrendas),
@@ -123,12 +107,135 @@ const tableRows = computed(() =>
   })),
 )
 
-const monthlyTotals = computed(() => ({
-  montoDiezmo: money(reporte.value.totals?.totalDiezmos),
-  montoPactoAmor: money(reporte.value.totals?.totalPactoAmor),
-  otrasOfrendas: money(reporte.value.totals?.totalOfrendas),
-  totalSobre: money(reporte.value.totals?.totalGeneral),
-}))
+const reportTitle = computed(() => (tipoReporte.value === 'semanal' ? 'Reporte semanal' : 'Reporte mensual'))
+const reportPeriod = computed(() => {
+  if (tipoReporte.value === 'semanal') {
+    return `${formatDateEs(filtros.fechaInicio)} - ${formatDateEs(filtros.fechaFin)}`
+  }
+
+  return new Intl.DateTimeFormat('es-VE', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Number(filtros.anio), Number(filtros.mes) - 1, 1))
+})
+
+const exportRows = computed(() =>
+  tableRows.value.map((row) =>
+    columns.value.reduce((record, column) => {
+      record[column.label] = row[column.key] ?? ''
+      return record
+    }, {}),
+  ),
+)
+
+const downloadFile = (content, filename, type) => {
+  const blob = new Blob([content], { type })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+const buildFilename = (extension) =>
+  `${tipoReporte.value}-${reportPeriod.value.replaceAll(' ', '-').replaceAll('/', '-')}.${extension}`
+
+const ensureExportData = () => {
+  if (hasRecords.value) return true
+
+  toast.add({
+    severity: 'warn',
+    summary: 'Sin datos',
+    life: 2200,
+  })
+
+  return false
+}
+
+const exportCsv = () => {
+  if (!ensureExportData()) return
+
+  const headers = columns.value.map((column) => column.label)
+  const rows = exportRows.value.map((row) =>
+    headers
+      .map((header) => `"${String(row[header] ?? '').replaceAll('"', '""')}"`)
+      .join(','),
+  )
+
+  downloadFile(
+    `\uFEFF${headers.join(',')}\n${rows.join('\n')}`,
+    buildFilename('csv'),
+    'text/csv;charset=utf-8;',
+  )
+}
+
+const exportExcel = () => {
+  if (!ensureExportData()) return
+
+  const headerCells = columns.value.map((column) => `<th>${column.label}</th>`).join('')
+  const bodyRows = exportRows.value
+    .map((row) => `<tr>${columns.value.map((column) => `<td>${row[column.label]}</td>`).join('')}</tr>`)
+    .join('')
+
+  downloadFile(
+    `
+      <html>
+        <head><meta charset="UTF-8" /></head>
+        <body>
+          <h2>${reportTitle.value}</h2>
+          <p>${reportPeriod.value}</p>
+          <table border="1">
+            <thead><tr>${headerCells}</tr></thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        </body>
+      </html>
+    `,
+    buildFilename('xls'),
+    'application/vnd.ms-excel;charset=utf-8;',
+  )
+}
+
+const exportPdf = () => {
+  if (!ensureExportData()) return
+
+  const headerCells = columns.value.map((column) => `<th>${column.label}</th>`).join('')
+  const bodyRows = exportRows.value
+    .map((row) => `<tr>${columns.value.map((column) => `<td>${row[column.label]}</td>`).join('')}</tr>`)
+    .join('')
+  const printWindow = window.open('', '_blank')
+
+  if (!printWindow) return
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>${reportTitle.value}</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #0f172a; padding: 24px; }
+          h1 { margin: 0 0 4px; font-size: 22px; }
+          p { margin: 0 0 20px; color: #64748b; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+          th { background: #f1f5f9; }
+        </style>
+      </head>
+      <body>
+        <h1>${reportTitle.value}</h1>
+        <p>${reportPeriod.value}</p>
+        <table>
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </body>
+    </html>
+  `)
+  printWindow.document.close()
+  printWindow.focus()
+  printWindow.print()
+}
 
 const loadReporte = async () => {
   consulted.value = true
@@ -186,6 +293,7 @@ watch(iglesiaActivaId, () => {
             view="month"
             date-format="mm/yy"
             show-icon
+            :manual-input="false"
             fluid
           />
         </AppField>
@@ -197,6 +305,7 @@ watch(iglesiaActivaId, () => {
               v-model="fechaInicioSemanal"
               date-format="dd/mm/yy"
               show-icon
+              :manual-input="false"
               fluid
             />
           </AppField>
@@ -207,6 +316,7 @@ watch(iglesiaActivaId, () => {
               v-model="fechaFinSemanal"
               date-format="dd/mm/yy"
               show-icon
+              :manual-input="false"
               fluid
             />
           </AppField>
@@ -227,13 +337,88 @@ watch(iglesiaActivaId, () => {
       >
       </DataTable>
 
-      <div v-if="tipoReporte === 'mensual' && consulted" class="report-totals">
-        <span>Diezmo: {{ monthlyTotals.montoDiezmo }}</span>
-        <span>Pacto amor: {{ monthlyTotals.montoPactoAmor }}</span>
-        <span>Ofrendas: {{ monthlyTotals.otrasOfrendas }}</span>
-        <strong>Total: {{ monthlyTotals.totalSobre }}</strong>
+    </section>
+
+    <h2 class="report-section-title">Exportar</h2>
+
+    <section class="export-section">
+      <div class="export-actions">
+        <div class="export-button-row">
+          <AppButton
+            class="export-button export-excel"
+            variant="secondary"
+            icon="pi pi-file-excel"
+            label="Exportar Excel"
+            @click="exportExcel"
+          />
+          <AppButton
+            class="export-button export-pdf"
+            variant="secondary"
+            icon="pi pi-file-pdf"
+            label="Exportar PDF"
+            @click="exportPdf"
+          />
+          <AppButton
+            class="export-button export-csv"
+            variant="secondary"
+            icon="pi pi-file"
+            label="Exportar CSV"
+            @click="exportCsv"
+          />
+        </div>
+
+        <PButton
+          v-tooltip.top="'Información'"
+          icon="pi pi-info"
+          severity="secondary"
+          outlined
+          aria-label="Información de exportación"
+          @click="exportInfoVisible = true"
+        />
       </div>
     </section>
+
+    <PDialog
+      v-model:visible="exportInfoVisible"
+      modal
+      class="export-info-dialog"
+      :style="{ width: 'min(420px, 92vw)' }"
+    >
+      <template #header>
+        <div class="export-dialog-heading">
+          <span class="export-dialog-icon">
+            <i class="pi pi-info" />
+          </span>
+          <strong>Información de exportación</strong>
+        </div>
+      </template>
+
+      <div class="export-info">
+        <div class="export-info-item excel">
+          <i class="pi pi-file-excel" />
+          <div>
+            <strong>Excel</strong>
+            <span>Descarga una tabla compatible con hojas de cálculo.</span>
+          </div>
+        </div>
+
+        <div class="export-info-item pdf">
+          <i class="pi pi-file-pdf" />
+          <div>
+            <strong>PDF</strong>
+            <span>Abre una vista lista para imprimir o guardar como PDF.</span>
+          </div>
+        </div>
+
+        <div class="export-info-item csv">
+          <i class="pi pi-file" />
+          <div>
+            <strong>CSV</strong>
+            <span>Genera un archivo simple para importar datos.</span>
+          </div>
+        </div>
+      </div>
+    </PDialog>
   </section>
 </template>
 
@@ -281,20 +466,159 @@ watch(iglesiaActivaId, () => {
   box-shadow: none;
 }
 
-.report-totals {
+.export-section {
+  display: grid;
+  padding: 16px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.report-section-title {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.export-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.export-button-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: flex-end;
-  padding: 14px 20px;
-  border-top: 1px solid var(--color-line);
-  color: var(--color-muted);
-  font-size: 13px;
-  font-weight: 800;
 }
 
-.report-totals strong {
+.export-actions :deep(.export-button) {
+  border-color: transparent;
+}
+
+.export-actions :deep(.export-excel) {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.export-actions :deep(.export-excel:hover) {
+  background: #86efac !important;
+  color: #14532d !important;
+}
+
+.export-actions :deep(.export-pdf) {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+.export-actions :deep(.export-pdf:hover) {
+  background: #fca5a5 !important;
+  color: #7f1d1d !important;
+}
+
+.export-actions :deep(.export-csv) {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+.export-actions :deep(.export-csv:hover) {
+  background: #93c5fd !important;
+  color: #1e40af !important;
+}
+
+.export-info {
+  display: grid;
+  gap: 10px;
+}
+
+.export-dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.export-dialog-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.export-dialog-heading strong {
   color: var(--color-ink);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.export-info-dialog :deep(.p-dialog-header) {
+  padding: 22px 24px 18px;
+}
+
+.export-info-dialog :deep(.p-dialog-content) {
+  padding: 16px 18px 18px;
+}
+
+.export-info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.export-info-item > i {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.export-info-item div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.export-info-item strong {
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.export-info-item span {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.export-info-item.excel > i {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.export-info-item.pdf > i {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.export-info-item.csv > i {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 @media (max-width: 980px) {
@@ -304,6 +628,16 @@ watch(iglesiaActivaId, () => {
 
   .filter-actions,
   .filter-actions :deep(.p-button) {
+    width: 100%;
+  }
+
+  .export-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .export-button-row,
+  .export-actions :deep(.p-button) {
     width: 100%;
   }
 }
