@@ -236,11 +236,26 @@ Package manager:
 
 ## Comandos principales
 
+Instalar dependencias:
+
+```bash
+pnpm --dir backend install
+pnpm --dir frontend install
+```
+
+Crear archivos de entorno:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
 Backend:
 
 ```bash
 cd backend
 pnpm db:setup
+pnpm dev
 pnpm start
 ```
 
@@ -249,6 +264,75 @@ Frontend:
 ```bash
 cd frontend
 pnpm dev --host 127.0.0.1
+pnpm build
+```
+
+`pnpm db:setup` crea la base `diezmos_db` si no existe y aplica el esquema desde `database/diezmos_db.sql`.
+
+## Variables de entorno
+
+Backend:
+
+```text
+NODE_ENV=development
+PORT=3000
+CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=diezmos_db
+DB_ADMIN_DATABASE=postgres
+DB_USER=diezmapp_user
+DB_PASSWORD=diezmapp_password
+DB_SSL=false
+```
+
+Frontend:
+
+```text
+VITE_API_URL=http://localhost:3000/api
+```
+
+En desarrollo local normalmente se usa `DB_SSL=false`.
+
+En Neon, Vercel o cualquier PostgreSQL que requiera SSL:
+
+```text
+NODE_ENV=production
+DB_SSL=true
+```
+
+Si frontend y backend se despliegan juntos en Vercel, `VITE_API_URL` puede omitirse porque el frontend apunta automaticamente a:
+
+```text
+/_/backend/api
+```
+
+## Despliegue en Vercel
+
+El proyecto usa `vercel.json` con dos servicios:
+
+- `frontend`: Vite, publicado en `/`.
+- `backend`: Express, publicado en `/_/backend`.
+
+Variables recomendadas para produccion:
+
+```text
+NODE_ENV=production
+DB_SSL=true
+DB_HOST=...
+DB_PORT=...
+DB_NAME=...
+DB_USER=...
+DB_PASSWORD=...
+```
+
+## Validacion recomendada
+
+```bash
+pnpm --dir frontend run lint
+pnpm --dir frontend build
+node -e "import('./backend/src/app.js').then(() => console.log('backend import ok'))"
 ```
 
 ## Estructura general
