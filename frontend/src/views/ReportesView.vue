@@ -142,6 +142,82 @@ const downloadFile = (content, filename, type) => {
 const buildFilename = (extension) =>
   `${tipoReporte.value}-${reportPeriod.value.replaceAll(' ', '-').replaceAll('/', '-')}.${extension}`
 
+const sanitizePdfText = (value) =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+
+const escapePdfText = (value) =>
+  sanitizePdfText(value)
+    .replaceAll('\\', '\\\\')
+    .replaceAll('(', '\\(')
+    .replaceAll(')', '\\)')
+
+const buildPdf = ({ title, period, headers, rows }) => {
+  const color = ([r, g, b]) => `${r} ${g} ${b}`
+  const text = (value, x, y, size = 10, bold = false, fill = [0.08, 0.12, 0.2]) =>
+    `BT ${color(fill)} rg /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${escapePdfText(value)}) Tj ET`
+  const line = (x1, y1, x2, y2, stroke = [0.83, 0.87, 0.92]) =>
+    `q ${color(stroke)} RG ${x1} ${y1} m ${x2} ${y2} l S Q`
+  const rect = (x, y, width, height, fill) => `q ${color(fill)} rg ${x} ${y} ${width} ${height} re f Q`
+  const colX = [48, 104, 190, 456]
+  const colWidths = [44, 76, 230, 80]
+  const rowStartY = 652
+  const rowHeight = 28
+  const content = [
+    rect(0, 0, 595, 842, [0.97, 0.98, 1]),
+    rect(36, 742, 523, 70, [1, 1, 1]),
+    line(36, 742, 559, 742),
+    text(title, 52, 788, 20, true, [0.04, 0.1, 0.22]),
+    text(period, 52, 766, 11, false, [0.39, 0.46, 0.56]),
+    rect(36, 692, 523, 36, [0.09, 0.23, 0.47]),
+    ...headers.map((header, index) => text(header, colX[index], 706, 10, true, [1, 1, 1])),
+  ]
+
+  rows.slice(0, 21).forEach((row, rowIndex) => {
+    const rowY = rowStartY - rowIndex * rowHeight
+    const textY = rowY + 10
+    content.push(rect(36, rowY, 523, rowHeight, rowIndex % 2 === 0 ? [1, 1, 1] : [0.94, 0.96, 0.98]))
+
+    headers.forEach((header, index) => {
+      const value = String(row[header] ?? '')
+      const maxLength = Math.floor(colWidths[index] / 5)
+      const visibleValue = value.length > maxLength ? `${value.slice(0, Math.max(maxLength - 3, 1))}...` : value
+      const isTotal = header.toLowerCase() === 'total'
+      content.push(text(visibleValue, colX[index], textY, 10, isTotal, isTotal ? [0.04, 0.48, 0.29] : [0.08, 0.12, 0.2]))
+    })
+    content.push(line(36, rowY, 559, rowY))
+  })
+
+  content.push(text(`Registros: ${rows.length}`, 48, 48, 10, true, [0.39, 0.46, 0.56]))
+
+  const stream = content.join('\n')
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ]
+
+  let pdf = '%PDF-1.4\n'
+  const offsets = [0]
+  objects.forEach((object, index) => {
+    offsets.push(pdf.length)
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`
+  })
+  const xrefOffset = pdf.length
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, '0')} 00000 n \n`
+  })
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`
+
+  return pdf
+}
+
 const ensureExportData = () => {
   if (hasRecords.value) return true
 
@@ -152,6 +228,12 @@ const ensureExportData = () => {
   })
 
   return false
+}
+
+const clearReporte = () => {
+  reporte.value = { items: [], totals: { totalGeneral: 0 } }
+  consulted.value = false
+  error.value = ''
 }
 
 const exportCsv = () => {
@@ -182,7 +264,13 @@ const exportExcel = () => {
   downloadFile(
     `
       <html>
-        <head><meta charset="UTF-8" /></head>
+        <head>
+          <meta charset="UTF-8" />
+          <style>
+            body, table, th, td, p { font-family: Arial, sans-serif; font-size: 12px; }
+            h2 { font-size: 12px; }
+          </style>
+        </head>
         <body>
           <h2>${reportTitle.value}</h2>
           <p>${reportPeriod.value}</p>
@@ -201,40 +289,14 @@ const exportExcel = () => {
 const exportPdf = () => {
   if (!ensureExportData()) return
 
-  const headerCells = columns.value.map((column) => `<th>${column.label}</th>`).join('')
-  const bodyRows = exportRows.value
-    .map((row) => `<tr>${columns.value.map((column) => `<td>${row[column.label]}</td>`).join('')}</tr>`)
-    .join('')
-  const printWindow = window.open('', '_blank')
+  const pdf = buildPdf({
+    title: reportTitle.value,
+    period: reportPeriod.value,
+    headers: columns.value.map((column) => column.label),
+    rows: exportRows.value,
+  })
 
-  if (!printWindow) return
-
-  printWindow.document.write(`
-    <html>
-      <head>
-        <title>${reportTitle.value}</title>
-        <style>
-          body { font-family: Arial, sans-serif; color: #0f172a; padding: 24px; }
-          h1 { margin: 0 0 4px; font-size: 22px; }
-          p { margin: 0 0 20px; color: #64748b; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-          th { background: #f1f5f9; }
-        </style>
-      </head>
-      <body>
-        <h1>${reportTitle.value}</h1>
-        <p>${reportPeriod.value}</p>
-        <table>
-          <thead><tr>${headerCells}</tr></thead>
-          <tbody>${bodyRows}</tbody>
-        </table>
-      </body>
-    </html>
-  `)
-  printWindow.document.close()
-  printWindow.focus()
-  printWindow.print()
+  downloadFile(pdf, buildFilename('pdf'), 'application/pdf')
 }
 
 const loadReporte = async () => {
@@ -323,6 +385,14 @@ watch(iglesiaActivaId, () => {
         </template>
 
         <div class="filter-actions">
+          <PButton
+            v-tooltip.top="'Limpiar consulta'"
+            icon="pi pi-eraser"
+            severity="secondary"
+            outlined
+            aria-label="Limpiar consulta"
+            @click="clearReporte"
+          />
           <AppButton type="submit" icon="pi pi-search" label="Consultar" />
         </div>
       </form>
@@ -348,21 +418,21 @@ watch(iglesiaActivaId, () => {
             class="export-button export-excel"
             variant="secondary"
             icon="pi pi-file-excel"
-            label="Exportar Excel"
+            label="Excel"
             @click="exportExcel"
           />
           <AppButton
             class="export-button export-pdf"
             variant="secondary"
             icon="pi pi-file-pdf"
-            label="Exportar PDF"
+            label="PDF"
             @click="exportPdf"
           />
           <AppButton
             class="export-button export-csv"
             variant="secondary"
             icon="pi pi-file"
-            label="Exportar CSV"
+            label="CSV"
             @click="exportCsv"
           />
         </div>
@@ -458,6 +528,7 @@ watch(iglesiaActivaId, () => {
 .filter-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
 }
 
 .report-card :deep(.report-table) {

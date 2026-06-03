@@ -254,6 +254,7 @@ const addOfrenda = () => {
 }
 
 const removeOfrenda = (index) => {
+  if (index === 0) return
   form.ofrendas.splice(index, 1)
   if (form.ofrendas.length === 0) addOfrenda()
 }
@@ -263,6 +264,7 @@ const addTransferencia = () => {
 }
 
 const removeTransferencia = (index) => {
+  if (index === 0) return
   form.transferencias.splice(index, 1)
   if (form.transferencias.length === 0) addTransferencia()
 }
@@ -441,6 +443,7 @@ const submit = () => {
                   icon="pi pi-trash"
                   severity="danger"
                   outlined
+                  :disabled="index === 0"
                   aria-label="Quitar ofrenda"
                   @click="removeOfrenda(index)"
                 />
@@ -494,6 +497,7 @@ const submit = () => {
                   icon="pi pi-trash"
                   severity="danger"
                   outlined
+                  :disabled="index === 0"
                   aria-label="Quitar transferencia"
                   @click="removeTransferencia(index)"
                 />

@@ -63,18 +63,21 @@ const tableRows = computed(() =>
     })),
 )
 
-const loadDashboard = async () => {
-  loading.value = true
+const loadDashboard = async ({ showLoading = true } = {}) => {
+  if (showLoading) {
+    loading.value = true
+  }
   error.value = ''
 
   try {
-    const [miembrosData, monedasData, sobresData, reporteData] =
-      await withMinimumDelay(() => Promise.all([
+    const loader = () => Promise.all([
         getMiembros(),
         getMonedas(),
         getSobres(),
         getReporteMensual({ mes: currentMonth, anio: currentYear }),
-      ]))
+      ])
+    const [miembrosData, monedasData, sobresData, reporteData] =
+      await (showLoading ? withMinimumDelay(loader) : loader())
 
     miembros.value = miembrosData
     monedas.value = monedasData
@@ -83,8 +86,10 @@ const loadDashboard = async () => {
   } catch (err) {
     error.value = err.message
   } finally {
-    loading.value = false
-    loadingCards.value = false
+    if (showLoading) {
+      loading.value = false
+      loadingCards.value = false
+    }
   }
 }
 
@@ -153,7 +158,7 @@ const saveContribution = async (form) => {
     toast.add({ severity: 'success', summary: 'Sobre actualizado', life: 2600 })
     dialogVisible.value = false
     selectedSobre.value = null
-    await loadDashboard()
+    await loadDashboard({ showLoading: false })
   } catch (err) {
     toast.add({
       severity: 'error',
@@ -180,7 +185,7 @@ const removeRow = (row) => {
       try {
         await deleteSobre(row.idSobre)
         toast.add({ severity: 'success', summary: 'Sobre eliminado', life: 2600 })
-        await loadDashboard()
+        await loadDashboard({ showLoading: false })
       } catch (err) {
         toast.add({
           severity: 'error',
