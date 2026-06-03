@@ -27,6 +27,14 @@ DB_NAME=diezmos_db
 DB_ADMIN_DATABASE=postgres
 DB_USER=diezmapp_user
 DB_PASSWORD=diezmapp_password
+DB_SSL=false
+```
+
+Para Neon/Vercel o cualquier PostgreSQL que requiera SSL:
+
+```env
+NODE_ENV=production
+DB_SSL=true
 ```
 
 ## Comandos
@@ -46,6 +54,7 @@ GET /api/health
 GET /api/health/database
 GET /api/iglesias
 GET /api/monedas
+GET /api/configuracion/tasa-dolar
 ```
 
 ## Modulos Principales
@@ -55,6 +64,8 @@ GET /api/monedas
 /api/sobres
 /api/reportes
 ```
+
+Las ofrendas de colaboracion y transferencias se administran dentro del flujo de sobres. No tienen rutas CRUD independientes en la version actual.
 
 ## Reportes
 

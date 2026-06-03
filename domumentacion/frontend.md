@@ -79,6 +79,8 @@ Usa `KeepAlive` para que las paginas principales no se desmonten al navegar.
 
 Esto evita recargas innecesarias al cambiar de pagina.
 
+Las vistas con datos compartidos recargan en segundo plano cuando se activan de nuevo. Asi, si se crea un miembro desde Sobres, al volver a Miembros aparece sin forzar un skeleton completo.
+
 ## Rutas
 
 Las rutas estan en:
@@ -150,8 +152,12 @@ src/api/http.js
 Base URL:
 
 ```js
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/_/backend/api' : 'http://localhost:3000/api')
 ```
+
+En desarrollo apunta a `http://localhost:3000/api`.
+
+En Vercel, si no se define `VITE_API_URL`, apunta al backend desplegado como servicio en `/_/backend/api`.
 
 El helper `api` expone:
 

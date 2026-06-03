@@ -33,6 +33,15 @@ Backend:
 cp backend/.env.example backend/.env
 ```
 
+En desarrollo local normalmente se usa `DB_SSL=false`.
+
+En Neon/Vercel usa:
+
+```env
+NODE_ENV=production
+DB_SSL=true
+```
+
 Frontend:
 
 ```bash
@@ -82,12 +91,36 @@ pnpm --dir frontend dev --host 127.0.0.1
 pnpm --dir frontend build
 ```
 
+## Despliegue en Vercel
+
+El proyecto usa `vercel.json` con dos servicios:
+
+- `frontend`: Vite, publicado en `/`.
+- `backend`: Express, publicado en `/_/backend`.
+
+En produccion el frontend llama automaticamente al backend en:
+
+```text
+/_/backend/api
+```
+
+Si frontend y backend se despliegan juntos en Vercel, no hace falta definir `VITE_API_URL`.
+
 ## Validacion recomendada
 
 ```bash
 pnpm --dir frontend run lint
 pnpm --dir frontend build
 node -e "import('./backend/src/app.js').then(() => console.log('backend import ok'))"
+```
+
+## Documentacion
+
+```text
+domumentacion/funcionamiento-general.md
+domumentacion/frontend.md
+domumentacion/backend.md
+domumentacion/database.md
 ```
 
 ## Rutas principales
@@ -105,6 +138,7 @@ Backend:
 - `GET /api/health`
 - `GET /api/health/database`
 - `GET /api/iglesias`
+- `GET /api/monedas`
 - `GET /api/miembros`
 - `GET /api/sobres`
 - `GET /api/reportes/semanal`

@@ -201,7 +201,8 @@ El frontend usa `KeepAlive` en las vistas principales.
 Esto significa:
 
 - La primera vez que se entra a una vista, carga los datos.
-- Si el usuario navega a otra vista y vuelve, no recarga automaticamente.
+- Si el usuario navega a otra vista y vuelve, la vista conserva su estado visual.
+- Dashboard, Miembros y Sobres hacen una recarga silenciosa al activarse de nuevo para reflejar cambios hechos desde otras pantallas.
 - Si cambia la iglesia activa, las vistas escuchan ese cambio y vuelven a consultar datos.
 
 Esto mejora la fluidez de navegacion.
@@ -289,4 +290,3 @@ El sistema valida:
    - Registro en `SOBRE`.
    - Registros en `OFRENDA_COLABORACION`.
    - Registros en `TRANSFERENCIA`.
-

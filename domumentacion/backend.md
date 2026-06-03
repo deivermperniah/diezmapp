@@ -46,6 +46,7 @@ DB_NAME=diezmos_db
 DB_ADMIN_DATABASE=postgres
 DB_USER=diezmapp_user
 DB_PASSWORD=diezmapp_password
+DB_SSL=false
 ```
 
 Variable opcional:
@@ -55,6 +56,13 @@ BCV_RATE_URL=https://ve.dolarapi.com/v1/dolares/oficial
 ```
 
 Si `BCV_RATE_URL` no existe, el backend usa la URL anterior por defecto.
+
+En produccion con Neon o servicios que requieren conexion segura:
+
+```text
+NODE_ENV=production
+DB_SSL=true
+```
 
 ## Entrada del servidor
 
@@ -124,6 +132,7 @@ Crea el pool de conexiones PostgreSQL.
 
 Configuracion:
 
+- SSL automatico en produccion o cuando `DB_SSL=true`.
 - `max: 10`
 - `idleTimeoutMillis: 30000`
 - `connectionTimeoutMillis: 5000`
