@@ -45,7 +45,7 @@ const isActive = (to) => route.path === to
 <template>
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">D</div>
+      <img class="brand-logo" src="/logo.png" alt="Logo diezmapp" />
       <div>
         <strong>diezmapp</strong>
       </div>
@@ -85,15 +85,13 @@ const isActive = (to) => route.path === to
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.brand-mark {
-  display: grid;
+.brand-logo {
   width: 42px;
   height: 42px;
-  place-items: center;
   border-radius: 8px;
-  background: var(--color-primary);
-  font-size: 20px;
-  font-weight: 900;
+  background: #fff;
+  object-fit: contain;
+  padding: 5px;
 }
 
 .brand strong,
