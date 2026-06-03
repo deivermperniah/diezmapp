@@ -1,4 +1,5 @@
 import { AppError } from '../../utils/app-error.js';
+import { parsePositiveInteger, parseRequiredText } from '../../utils/validators.js';
 import {
   createIglesia,
   deleteIglesia,
@@ -8,23 +9,11 @@ import {
 } from './iglesias.repository.js';
 
 const parseId = (value, fieldName = 'La iglesia') => {
-  const parsedValue = Number(value);
-
-  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
-    throw new AppError(`${fieldName} no es valida.`, 400);
-  }
-
-  return parsedValue;
+  return parsePositiveInteger(value, fieldName, `${fieldName} no es valida.`);
 };
 
 const parseText = (value, fieldName) => {
-  const parsedValue = String(value || '').trim();
-
-  if (parsedValue.length < 2) {
-    throw new AppError(`${fieldName} es obligatorio.`, 400);
-  }
-
-  return parsedValue;
+  return parseRequiredText(value, fieldName);
 };
 
 const validateIglesiaPayload = (payload) => ({

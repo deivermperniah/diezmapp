@@ -1,54 +1,14 @@
 import { AppError } from '../../utils/app-error.js';
+import {
+  parseDateParts,
+  parseMonth,
+  parseOptionalPositiveInteger,
+  parseYear,
+} from '../../utils/validators.js';
 import { findReporteMensual, findReporteSemanal } from './reportes.repository.js';
 
-const parseFecha = (fecha, fieldName) => {
-  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    throw new AppError(`${fieldName} debe tener formato YYYY-MM-DD.`, 400);
-  }
-
-  const [anio, mes, dia] = fecha.split('-').map(Number);
-  const parsedDate = new Date(Date.UTC(anio, mes - 1, dia));
-
-  if (
-    parsedDate.getUTCFullYear() !== anio ||
-    parsedDate.getUTCMonth() + 1 !== mes ||
-    parsedDate.getUTCDate() !== dia
-  ) {
-    throw new AppError(`${fieldName} no es valida.`, 400);
-  }
-
-  return fecha;
-};
-
-const parseMes = (mes) => {
-  const parsedMes = Number(mes);
-
-  if (!Number.isInteger(parsedMes) || parsedMes < 1 || parsedMes > 12) {
-    throw new AppError('El mes debe estar entre 1 y 12.', 400);
-  }
-
-  return parsedMes;
-};
-
-const parseAnio = (anio) => {
-  const parsedAnio = Number(anio);
-
-  if (!Number.isInteger(parsedAnio) || parsedAnio < 2000) {
-    throw new AppError('El anio no es valido.', 400);
-  }
-
-  return parsedAnio;
-};
-
 const parseOptionalId = (value, fieldName) => {
-  if (!value) return null;
-  const parsedValue = Number(value);
-
-  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
-    throw new AppError(`${fieldName} no es valida.`, 400);
-  }
-
-  return parsedValue;
+  return parseOptionalPositiveInteger(value, fieldName, `${fieldName} no es valida.`);
 };
 
 const toNumber = (value) => Number(value || 0);
@@ -86,8 +46,8 @@ const buildSemanalTotals = (items) => {
 };
 
 export const getReporteSemanal = async ({ fechaInicio, fechaFin, idIglesia }) => {
-  const parsedFechaInicio = parseFecha(fechaInicio, 'La fecha de inicio');
-  const parsedFechaFin = parseFecha(fechaFin, 'La fecha de fin');
+  const parsedFechaInicio = parseDateParts(fechaInicio, 'La fecha de inicio').fecha;
+  const parsedFechaFin = parseDateParts(fechaFin, 'La fecha de fin').fecha;
 
   if (parsedFechaInicio > parsedFechaFin) {
     throw new AppError('La fecha de inicio no puede ser mayor que la fecha de fin.', 400);
@@ -108,8 +68,8 @@ export const getReporteSemanal = async ({ fechaInicio, fechaFin, idIglesia }) =>
 };
 
 export const getReporteMensual = async ({ mes, anio, idIglesia }) => {
-  const parsedMes = parseMes(mes);
-  const parsedAnio = parseAnio(anio);
+  const parsedMes = parseMonth(mes);
+  const parsedAnio = parseYear(anio);
 
   const items = await findReporteMensual({
     mes: parsedMes,

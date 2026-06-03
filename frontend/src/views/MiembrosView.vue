@@ -4,7 +4,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
 import MemberFormDialog from '@/components/MemberFormDialog.vue'
-import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
+import { getIglesiaActivaId, iglesiaActivaId, iglesiaActivaReady } from '@/services/iglesia-activa.service'
 import {
   createMiembro,
   deleteMiembro,
@@ -30,6 +30,14 @@ const columns = [
 ]
 
 const loadData = async ({ showLoading = true } = {}) => {
+  if (!iglesiaActivaReady.value) return
+
+  if (!getIglesiaActivaId()) {
+    miembros.value = []
+    loading.value = false
+    return
+  }
+
   if (showLoading) {
     loading.value = true
   }
@@ -140,7 +148,7 @@ const removeRow = (row) => {
 }
 
 onMounted(loadData)
-watch(iglesiaActivaId, loadData)
+watch([iglesiaActivaReady, iglesiaActivaId], () => loadData())
 </script>
 
 <template>

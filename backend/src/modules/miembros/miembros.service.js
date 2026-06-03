@@ -1,4 +1,5 @@
 import { AppError } from '../../utils/app-error.js';
+import { parsePositiveInteger } from '../../utils/validators.js';
 import {
   countSobresByMiembro,
   createMiembro,
@@ -39,13 +40,11 @@ const validateMiembroPayload = ({ nombre, apellido, email, idIglesia }) => {
 };
 
 const parseId = (idMiembro) => {
-  const parsedId = Number(idMiembro);
-
-  if (!Number.isInteger(parsedId) || parsedId <= 0) {
-    throw new AppError('El id del miembro no es valido.', 400);
-  }
-
-  return parsedId;
+  return parsePositiveInteger(
+    idMiembro,
+    'El id del miembro',
+    'El id del miembro no es valido.',
+  );
 };
 
 export const getMiembros = async () => {

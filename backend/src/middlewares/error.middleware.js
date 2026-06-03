@@ -2,7 +2,7 @@ import { env } from '../config/env.js';
 
 const postgresErrorMessages = {
   '23503': 'No se encontro el registro relacionado.',
-  '23505': 'Ya existe un registro con esos datos. Revise valores unicos como email o numero de sobre mensual.',
+  '23505': 'Ya existe un registro con esos datos. Revise valores unicos como email por iglesia o numero de sobre mensual.',
 };
 
 const getPostgresErrorMessage = (error, req) => {

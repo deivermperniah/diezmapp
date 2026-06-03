@@ -4,6 +4,7 @@ import AppField from '@/components/ui/AppField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import FormDialog from '@/components/ui/FormDialog.vue'
+import { useContributionAmounts } from '@/composables/useContributionAmounts'
 import { getTasaDolar } from '@/services/configuracion.service'
 import { toLocalDateString } from '@/utils/date'
 
@@ -131,31 +132,18 @@ const selectedCurrencyLabel = computed(() => {
 })
 
 const isBolivarSelected = computed(() => selectedCurrencyLabel.value === 'Bs' || selectedCurrencyLabel.value === 'Bs.')
-const hasValidRate = computed(() => !isBolivarSelected.value || Number(tasaDolar.value || 0) > 0)
 const submitButtonLabel = computed(() => (props.sobre ? 'Guardar cambios' : 'Guardar sobre'))
 const submitButtonIcon = computed(() => (props.sobre ? 'pi pi-check' : 'pi pi-check'))
 const amountLabel = (label) => `${label} (${selectedCurrencyLabel.value})`
-const formatUsd = (value) =>
-  Number(value || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const parseAmount = (amount) => {
-  if (typeof amount === 'number') return amount
-  const normalizedAmount = String(amount || '')
-    .replace(/\./g, '')
-    .replace(',', '.')
-  return Number(normalizedAmount || 0)
-}
-const amountToUsd = (amount) => {
-  const numericAmount = parseAmount(amount)
-  const rate = Number(tasaDolar.value || 0)
-
-  if (!isBolivarSelected.value) return Number(numericAmount.toFixed(2))
-  return rate ? Number((numericAmount / rate).toFixed(2)) : 0
-}
-const equivalentUsd = (amount) => {
-  if (!isBolivarSelected.value) return ''
-  return `$ ${formatUsd(amountToUsd(amount))}`
-}
-const equivalentUsdAmount = (amount) => equivalentUsd(amount).replace('$ ', '') || '0,00'
+const {
+  equivalentUsdAmount,
+  formatUsd,
+  parseAmount,
+  totalCapturado,
+  totalCapturadoEntrada,
+  totalTransferencias,
+  totalsMatch,
+} = useContributionAmounts({ form, tasaDolar, isBolivarSelected })
 
 const loadDollarRate = async () => {
   if (tasaDolar.value) return
@@ -211,33 +199,6 @@ watch(
     if (isBolivarSelected.value) loadDollarRate()
   },
 )
-
-const totalCapturado = computed(() => {
-  const diezmo = amountToUsd(form.montoDiezmo)
-  const pacto = amountToUsd(form.montoPactoAmor)
-  const ofrendas = form.ofrendas.reduce((total, ofrenda) => total + amountToUsd(ofrenda.montoOfrenda), 0)
-  return Number((diezmo + pacto + ofrendas).toFixed(2))
-})
-
-const totalCapturadoEntrada = computed(() => {
-  const diezmo = parseAmount(form.montoDiezmo)
-  const pacto = parseAmount(form.montoPactoAmor)
-  const ofrendas = form.ofrendas.reduce((total, ofrenda) => total + parseAmount(ofrenda.montoOfrenda), 0)
-  return Number((diezmo + pacto + ofrendas).toFixed(2))
-})
-
-const totalTransferencias = computed(() =>
-  Number(
-    form.transferencias
-      .reduce((total, transferencia) => total + amountToUsd(transferencia.montoTransferencia), 0)
-      .toFixed(2),
-  ),
-)
-
-const totalsMatch = computed(() => {
-  if (!hasValidRate.value) return false
-  return Math.abs(totalCapturado.value - totalTransferencias.value) <= 0.01
-})
 
 const addOfrenda = () => {
   form.ofrendas.push(newOfrenda())

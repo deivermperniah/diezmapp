@@ -7,11 +7,12 @@ import DataTable from '@/components/DataTable.vue'
 import SobreDetailDialog from '@/components/SobreDetailDialog.vue'
 import StatCard from '@/components/StatCard.vue'
 import { getMonedas } from '@/services/catalogos.service'
-import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
+import { getIglesiaActivaId, iglesiaActivaId, iglesiaActivaReady } from '@/services/iglesia-activa.service'
 import { getMiembros } from '@/services/miembros.service'
 import { deleteSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
 import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
+import { buildSobrePayload } from '@/utils/sobrePayload'
 
 const loading = ref(true)
 const loadingCards = ref(true)
@@ -58,6 +59,17 @@ const tableRows = computed(() =>
 )
 
 const loadDashboard = async ({ showLoading = true } = {}) => {
+  if (!iglesiaActivaReady.value) return
+
+  if (!getIglesiaActivaId()) {
+    miembros.value = []
+    monedas.value = []
+    sobres.value = []
+    loading.value = false
+    loadingCards.value = false
+    return
+  }
+
   if (showLoading) {
     loading.value = true
   }
@@ -135,16 +147,7 @@ const saveContribution = async (form) => {
 
   saving.value = true
   try {
-    await updateSobre(selectedSobre.value.idSobre, {
-      fecha: form.fecha,
-      idIglesia: Number(getIglesiaActivaId()),
-      idMiembro: Number(form.idMiembro),
-      idMoneda: form.idMoneda,
-      montoDiezmo: form.montoDiezmo || 0,
-      montoPactoAmor: form.montoPactoAmor || 0,
-      ofrendas: form.ofrendas,
-      transferencias: form.transferencias,
-    })
+    await updateSobre(selectedSobre.value.idSobre, buildSobrePayload(form, getIglesiaActivaId()))
 
     toast.add({ severity: 'success', summary: 'Sobre actualizado', life: 2600 })
     dialogVisible.value = false
@@ -190,7 +193,7 @@ const removeRow = (row) => {
 }
 
 onMounted(loadDashboard)
-watch(iglesiaActivaId, loadDashboard)
+watch([iglesiaActivaReady, iglesiaActivaId], () => loadDashboard())
 </script>
 
 <template>

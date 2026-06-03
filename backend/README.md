@@ -72,7 +72,7 @@ GET /api/reportes/mensual?mes=5&anio=2026
 La restriccion:
 
 ```sql
-UNIQUE (Numero_Sobre, Mes, Anio)
+UNIQUE (Numero_Sobre, Mes, Anio, Id_Iglesia)
 ```
 
-permite que cada mes empiece desde 1 sin repetir numeros dentro del mismo mes.
+permite que cada iglesia empiece cada mes desde 1 sin repetir numeros dentro del mismo mes.

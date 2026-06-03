@@ -1,4 +1,12 @@
 import { AppError } from '../../utils/app-error.js';
+import {
+  parseCurrency,
+  parseDateParts,
+  parseMoney,
+  parseOptionalText,
+  parsePositiveInteger,
+  parseRequiredText,
+} from '../../utils/validators.js';
 import { convertMoneyToUsd, getTasaBcvDolar } from '../../services/currency.service.js';
 import { findOfrendasBySobreId } from '../ofrendas/ofrendas.repository.js';
 import { findTransferenciasBySobreId } from '../transferencias/transferencias.repository.js';
@@ -11,76 +19,7 @@ import {
   updateSobre,
 } from './sobres.repository.js';
 
-const parsePositiveInteger = (value, fieldName) => {
-  const parsedValue = Number(value);
-
-  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
-    throw new AppError(`${fieldName} no es valido.`, 400);
-  }
-
-  return parsedValue;
-};
-
-const parseOptionalPositiveInteger = (value, fieldName) => {
-  if (value === undefined || value === null || value === '') return null;
-  return parsePositiveInteger(value, fieldName);
-};
-
-const parseCurrency = (value, fieldName) => {
-  const parsedValue = String(value || '').trim();
-
-  if (!['Bs', '$'].includes(parsedValue)) {
-    throw new AppError(`${fieldName} debe ser Bs o $.`, 400);
-  }
-
-  return parsedValue;
-};
-
-const parseMoney = (value, fieldName, { required = true } = {}) => {
-  if ((value === undefined || value === null || value === '') && !required) return 0;
-
-  const parsedValue = Number(value);
-
-  if (Number.isNaN(parsedValue) || parsedValue < 0) {
-    throw new AppError(`${fieldName} debe ser un monto mayor o igual a cero.`, 400);
-  }
-
-  return Number(parsedValue.toFixed(2));
-};
-
-const parseRequiredText = (value, fieldName, minLength = 2) => {
-  const parsedValue = String(value || '').trim();
-
-  if (parsedValue.length < minLength) {
-    throw new AppError(`${fieldName} es obligatorio.`, 400);
-  }
-
-  return parsedValue;
-};
-
-const parseOptionalText = (value) => {
-  const parsedValue = String(value || '').trim();
-  return parsedValue || null;
-};
-
-const parseFecha = (fecha) => {
-  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    throw new AppError('La fecha debe tener formato YYYY-MM-DD.', 400);
-  }
-
-  const [anio, mes, dia] = fecha.split('-').map(Number);
-  const parsedDate = new Date(Date.UTC(anio, mes - 1, dia));
-
-  if (
-    parsedDate.getUTCFullYear() !== anio ||
-    parsedDate.getUTCMonth() + 1 !== mes ||
-    parsedDate.getUTCDate() !== dia
-  ) {
-    throw new AppError('La fecha no es valida.', 400);
-  }
-
-  return { fecha, mes, anio };
-};
+const parseFecha = (fecha) => parseDateParts(fecha);
 
 const parseId = (idSobre) => parsePositiveInteger(idSobre, 'El id del sobre');
 

@@ -85,6 +85,10 @@ export const createSobre = async ({
 
   try {
     await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1, $2)', [
+      idIglesia,
+      anio * 100 + mes,
+    ]);
 
     const nextNumberResult = await client.query(
       `

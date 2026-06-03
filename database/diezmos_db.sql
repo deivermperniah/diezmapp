@@ -17,12 +17,28 @@ CREATE TABLE IF NOT EXISTS MIEMBRO (
     Id_Miembro SERIAL PRIMARY KEY,
     Nombre VARCHAR(100) NOT NULL,
     Apellido VARCHAR(100) NOT NULL DEFAULT '',
-    Email VARCHAR(100) UNIQUE,
+    Email VARCHAR(100),
     Id_Iglesia INTEGER NOT NULL REFERENCES IGLESIA(Id_Iglesia)
 );
 
 ALTER TABLE MIEMBRO
 ADD COLUMN IF NOT EXISTS Apellido VARCHAR(100) NOT NULL DEFAULT '';
+
+ALTER TABLE MIEMBRO
+DROP CONSTRAINT IF EXISTS miembro_email_key;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE constraint_name = 'uq_miembro_iglesia_email'
+    ) THEN
+        ALTER TABLE MIEMBRO
+        ADD CONSTRAINT UQ_Miembro_Iglesia_Email
+        UNIQUE (Id_Iglesia, Email);
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS SOBRE (
     Id_Sobre SERIAL PRIMARY KEY,
@@ -30,7 +46,7 @@ CREATE TABLE IF NOT EXISTS SOBRE (
     Fecha DATE NOT NULL,
     Mes SMALLINT NOT NULL,
     Anio SMALLINT NOT NULL,
-    Id_Iglesia INTEGER REFERENCES IGLESIA(Id_Iglesia),
+    Id_Iglesia INTEGER NOT NULL REFERENCES IGLESIA(Id_Iglesia),
     Id_Miembro INTEGER NOT NULL REFERENCES MIEMBRO(Id_Miembro),
     Monto_Diezmo DECIMAL(10,2) NOT NULL,
     Monto_Pacto_Amor DECIMAL(10,2),
@@ -77,6 +93,9 @@ SET Id_Iglesia = m.Id_Iglesia
 FROM MIEMBRO m
 WHERE m.Id_Miembro = s.Id_Miembro
   AND s.Id_Iglesia IS NULL;
+
+ALTER TABLE SOBRE
+ALTER COLUMN Id_Iglesia SET NOT NULL;
 
 DO $$
 BEGIN

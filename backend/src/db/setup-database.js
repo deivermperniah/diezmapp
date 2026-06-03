@@ -2,8 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
 
-dotenv.config({ quiet: true });
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const backendRoot = path.resolve(currentDir, '../..');
+const projectRoot = path.resolve(backendRoot, '..');
+
+dotenv.config({ path: path.resolve(backendRoot, '.env'), quiet: true });
 
 const { Client } = pg;
 
@@ -25,7 +30,7 @@ const databaseConfig = {
 
 const targetDatabase = process.env.DB_NAME;
 const adminDatabase = process.env.DB_ADMIN_DATABASE || 'postgres';
-const schemaPath = path.resolve(process.cwd(), '../database/diezmos_db.sql');
+const schemaPath = path.resolve(projectRoot, 'database/diezmos_db.sql');
 
 const createDatabaseIfNotExists = async () => {
   const client = new Client({

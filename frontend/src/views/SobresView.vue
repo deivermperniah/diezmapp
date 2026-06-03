@@ -7,11 +7,12 @@ import DataTable from '@/components/DataTable.vue'
 import MemberFormDialog from '@/components/MemberFormDialog.vue'
 import SobreDetailDialog from '@/components/SobreDetailDialog.vue'
 import { getMonedas } from '@/services/catalogos.service'
-import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
+import { getIglesiaActivaId, iglesiaActivaId, iglesiaActivaReady } from '@/services/iglesia-activa.service'
 import { createMiembro, getMiembros } from '@/services/miembros.service'
 import { createSobre, deleteSobre, getSiguienteNumeroSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
 import { formatDateEs, toLocalDateString } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
+import { buildSobrePayload } from '@/utils/sobrePayload'
 
 const today = toLocalDateString()
 const miembros = ref([])
@@ -54,6 +55,17 @@ const tableRows = computed(() =>
 )
 
 const loadData = async ({ showLoading = true } = {}) => {
+  if (!iglesiaActivaReady.value) return
+
+  if (!getIglesiaActivaId()) {
+    miembros.value = []
+    monedas.value = []
+    sobres.value = []
+    siguiente.value = null
+    loading.value = false
+    return
+  }
+
   if (showLoading) {
     loading.value = true
   }
@@ -165,16 +177,7 @@ const saveMember = async (payload) => {
 const saveContribution = async (form) => {
   saving.value = true
   try {
-    const payload = {
-      fecha: form.fecha,
-      idIglesia: Number(getIglesiaActivaId()),
-      idMiembro: Number(form.idMiembro),
-      idMoneda: form.idMoneda,
-      montoDiezmo: form.montoDiezmo || 0,
-      montoPactoAmor: form.montoPactoAmor || 0,
-      ofrendas: form.ofrendas,
-      transferencias: form.transferencias,
-    }
+    const payload = buildSobrePayload(form, getIglesiaActivaId())
 
     if (selectedSobre.value?.idSobre) {
       await updateSobre(selectedSobre.value.idSobre, payload)
@@ -231,7 +234,7 @@ const removeRow = (row) => {
 }
 
 onMounted(loadData)
-watch(iglesiaActivaId, loadData)
+watch([iglesiaActivaReady, iglesiaActivaId], () => loadData())
 </script>
 
 <template>

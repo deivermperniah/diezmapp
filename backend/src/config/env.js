@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
-dotenv.config({ quiet: true });
+const envPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env');
+
+dotenv.config({ path: envPath, quiet: true });
 
 const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
 

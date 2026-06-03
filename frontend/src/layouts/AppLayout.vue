@@ -6,24 +6,36 @@ import { getIglesias } from '@/services/catalogos.service'
 import {
   getIglesiaActivaId,
   iglesiaActivaNombre,
+  setIglesiaActivaReady,
   setIglesiaActivaId,
 } from '@/services/iglesia-activa.service'
 
 onMounted(async () => {
   const activeId = getIglesiaActivaId()
   const iglesias = await getIglesias().catch(() => [])
+  const fallback = iglesias[0] || null
 
   if (activeId) {
     const active = iglesias.find((iglesia) => String(iglesia.idIglesia) === String(activeId))
-    if (active && !iglesiaActivaNombre.value) {
-      setIglesiaActivaId(active.idIglesia, active.nombreIglesia)
+    if (active) {
+      setIglesiaActivaId(active.idIglesia, active.nombreIglesia || iglesiaActivaNombre.value)
+      setIglesiaActivaReady()
+      return
     }
+
+    if (fallback) {
+      setIglesiaActivaId(fallback.idIglesia, fallback.nombreIglesia)
+    } else {
+      setIglesiaActivaId('')
+    }
+    setIglesiaActivaReady()
     return
   }
 
-  if (iglesias[0]?.idIglesia) {
-    setIglesiaActivaId(iglesias[0].idIglesia, iglesias[0].nombreIglesia)
+  if (fallback?.idIglesia) {
+    setIglesiaActivaId(fallback.idIglesia, fallback.nombreIglesia)
   }
+  setIglesiaActivaReady()
 })
 </script>
 

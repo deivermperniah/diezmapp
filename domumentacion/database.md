@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS MIEMBRO (
     Id_Miembro SERIAL PRIMARY KEY,
     Nombre VARCHAR(100) NOT NULL,
     Apellido VARCHAR(100) NOT NULL DEFAULT '',
-    Email VARCHAR(100) UNIQUE,
+    Email VARCHAR(100),
     Id_Iglesia INTEGER NOT NULL REFERENCES IGLESIA(Id_Iglesia)
 );
 ```
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS MIEMBRO (
 | `Id_Miembro` | `SERIAL` | Identificador unico del miembro. |
 | `Nombre` | `VARCHAR(100)` | Nombre del miembro. |
 | `Apellido` | `VARCHAR(100)` | Apellido del miembro. |
-| `Email` | `VARCHAR(100)` | Correo electronico. Es unico. |
+| `Email` | `VARCHAR(100)` | Correo electronico. Es unico dentro de la misma iglesia. |
 | `Id_Iglesia` | `INTEGER` | Iglesia a la que pertenece el miembro. |
 
 ### Claves
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS SOBRE (
     Fecha DATE NOT NULL,
     Mes SMALLINT NOT NULL,
     Anio SMALLINT NOT NULL,
-    Id_Iglesia INTEGER REFERENCES IGLESIA(Id_Iglesia),
+    Id_Iglesia INTEGER NOT NULL REFERENCES IGLESIA(Id_Iglesia),
     Id_Miembro INTEGER NOT NULL REFERENCES MIEMBRO(Id_Miembro),
     Monto_Diezmo DECIMAL(10,2) NOT NULL,
     Monto_Pacto_Amor DECIMAL(10,2),
@@ -475,4 +475,3 @@ GROUP BY Id_Sobre;
 - No modificar montos directamente si no se recalcula `Total_Incluido`.
 - Mantener la regla de que transferencias sumen el total incluido.
 - Usar siempre el backend para registrar sobres, porque ahi estan las validaciones.
-
