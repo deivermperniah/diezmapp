@@ -37,31 +37,26 @@ Variables requeridas:
 
 ```text
 NODE_ENV=development
-PORT=3000
-CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
+DB_SSL=false
 
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=diezmos_db
-DB_ADMIN_DATABASE=postgres
 DB_USER=diezmapp_user
 DB_PASSWORD=diezmapp_password
-DB_SSL=false
 ```
 
-Variable opcional:
-
-```text
-BCV_RATE_URL=https://ve.dolarapi.com/v1/dolares/oficial
-```
-
-Si `BCV_RATE_URL` no existe, el backend usa la URL anterior por defecto.
-
-En produccion con Neon o servicios que requieren conexion segura:
+En Vercel con Neon o servicios que requieren conexion segura, se usan las mismas variables con valores de produccion:
 
 ```text
 NODE_ENV=production
 DB_SSL=true
+
+DB_HOST=...
+DB_PORT=5432
+DB_NAME=...
+DB_USER=...
+DB_PASSWORD=...
 ```
 
 ## Entrada del servidor

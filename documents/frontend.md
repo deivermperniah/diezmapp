@@ -152,12 +152,12 @@ src/api/http.js
 Base URL:
 
 ```js
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/_/backend/api' : 'http://localhost:3000/api')
+const API_BASE_URL = import.meta.env.PROD ? '/_/backend/api' : 'http://localhost:3000/api'
 ```
 
 En desarrollo apunta a `http://localhost:3000/api`.
 
-En Vercel, si no se define `VITE_API_URL`, apunta al backend desplegado como servicio en `/_/backend/api`.
+En Vercel apunta al backend desplegado como servicio en `/_/backend/api`.
 
 El helper `api` expone:
 

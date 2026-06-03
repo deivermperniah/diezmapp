@@ -247,7 +247,6 @@ Crear archivos de entorno:
 
 ```bash
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
 ```
 
 Backend:
@@ -275,22 +274,13 @@ Backend:
 
 ```text
 NODE_ENV=development
-PORT=3000
-CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
+DB_SSL=false
 
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=diezmos_db
-DB_ADMIN_DATABASE=postgres
 DB_USER=diezmapp_user
 DB_PASSWORD=diezmapp_password
-DB_SSL=false
-```
-
-Frontend:
-
-```text
-VITE_API_URL=http://localhost:3000/api
 ```
 
 En desarrollo local normalmente se usa `DB_SSL=false`.
@@ -302,10 +292,11 @@ NODE_ENV=production
 DB_SSL=true
 ```
 
-Si frontend y backend se despliegan juntos en Vercel, `VITE_API_URL` puede omitirse porque el frontend apunta automaticamente a:
+El frontend apunta automaticamente al backend segun el entorno:
 
 ```text
-/_/backend/api
+Desarrollo: http://localhost:3000/api
+Vercel: /_/backend/api
 ```
 
 ## Despliegue en Vercel
@@ -320,8 +311,9 @@ Variables recomendadas para produccion:
 ```text
 NODE_ENV=production
 DB_SSL=true
+
 DB_HOST=...
-DB_PORT=...
+DB_PORT=5432
 DB_NAME=...
 DB_USER=...
 DB_PASSWORD=...
@@ -345,7 +337,7 @@ DIEZMAPP/
 │   └── src/
 ├── database/
 │   └── diezmos_db.sql
-└── domumentacion/
+└── documents/
 ```
 
 ## Validaciones importantes

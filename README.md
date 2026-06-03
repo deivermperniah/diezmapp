@@ -28,10 +28,10 @@ Funciones principales:
 Los detalles completos del proyecto estan en:
 
 ```text
-domumentacion/funcionamiento-general.md
-domumentacion/frontend.md
-domumentacion/backend.md
-domumentacion/database.md
+documents/funcionamiento-general.md
+documents/frontend.md
+documents/backend.md
+documents/database.md
 ```
 
 ## Inicio rapido
@@ -40,7 +40,6 @@ domumentacion/database.md
 pnpm --dir backend install
 pnpm --dir frontend install
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
 pnpm --dir backend db:setup
 pnpm --dir backend dev
 pnpm --dir frontend dev --host 127.0.0.1
