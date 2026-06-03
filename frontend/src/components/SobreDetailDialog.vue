@@ -11,8 +11,6 @@ const props = defineProps({
   idSobre: { type: [String, Number], default: null },
 })
 
-const emit = defineEmits(['update:visible'])
-
 const loading = ref(false)
 const error = ref('')
 const sobre = ref(null)

@@ -40,10 +40,6 @@ a {
   gap: 22px;
 }
 
-.panel-body {
-  padding: 20px;
-}
-
 .grid {
   display: grid;
   gap: 16px;
@@ -55,12 +51,6 @@ a {
 
 .grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
 }
 
 .field {
@@ -81,12 +71,6 @@ a {
   flex-wrap: wrap;
 }
 
-.page-actions {
-  display: flex;
-  justify-content: flex-end;
-  justify-self: stretch;
-}
-
 .status {
   min-height: 22px;
   color: var(--color-muted);
@@ -96,10 +80,6 @@ a {
 
 .status-error {
   color: var(--color-danger);
-}
-
-.status-ok {
-  color: var(--color-success);
 }
 
 .empty-state {
@@ -331,13 +311,7 @@ a {
 
 @media (max-width: 980px) {
   .grid-2,
-  .grid-3,
-  .form-grid {
+  .grid-3 {
     grid-template-columns: 1fr;
-  }
-
-  .page-actions-toolbar .p-toolbar-end,
-  .page-actions-toolbar .p-button {
-    width: 100%;
   }
 }
