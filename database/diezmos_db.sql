@@ -1,7 +1,7 @@
 -- Base de Datos: Diezmos y Ofrendas
 -- PostgreSQL
--- Los montos operativos se guardan en dolares. Los campos *_Original
--- preservan lo capturado por el usuario junto con la tasa BCV usada.
+-- Los montos operativos se guardan en dolares.
+-- Si el usuario captura en bolivares, la aplicacion convierte antes de guardar.
 
 CREATE DATABASE diezmos_db;
 
@@ -133,12 +133,6 @@ BEGIN
                 constraint_record.conname
             );
         END LOOP;
-    END IF;
-END $$;
-
-DO $$
-BEGIN
-    IF to_regclass('public.moneda') IS NOT NULL THEN
     END IF;
 END $$;
 

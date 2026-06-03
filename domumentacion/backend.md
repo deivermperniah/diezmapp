@@ -1,6 +1,6 @@
 # Backend - DIEZMAPP
 
-El backend de DIEZMAPP esta construido con Node.js, Express y PostgreSQL usando el paquete `pg`. Su funcion es exponer una API REST para que el frontend pueda administrar iglesias, miembros, sobres, ofrendas, transferencias, reportes y tasa del dolar.
+El backend de DIEZMAPP esta construido con Node.js, Express y PostgreSQL usando el paquete `pg`. Su funcion es exponer una API REST para que el frontend pueda administrar iglesias, miembros, sobres, reportes y tasa del dolar.
 
 ## Ubicacion
 
@@ -333,15 +333,13 @@ Payload de creacion/edicion:
   "fecha": "2026-06-01",
   "idIglesia": 1,
   "idMiembro": 1,
+  "idMoneda": "$",
   "montoDiezmo": 10,
-  "idMonedaDiezmo": "$",
   "montoPactoAmor": 5,
-  "idMonedaPacto": "$",
   "ofrendas": [
     {
       "nombreOfrenda": "Ayuda ninos",
-      "montoOfrenda": 3,
-      "idMoneda": "$"
+      "montoOfrenda": 3
     }
   ],
   "transferencias": [
@@ -349,8 +347,7 @@ Payload de creacion/edicion:
       "fechaTransferencia": "2026-06-01",
       "numeroTransferencia": "REF-001",
       "bancoReceptorCuenta": "Banesco",
-      "montoTransferencia": 18,
-      "idMoneda": "$"
+      "montoTransferencia": 18
     }
   ]
 }
@@ -366,33 +363,19 @@ El backend:
 6. Verifica que transferencias sumen el total.
 7. Guarda sobre, ofrendas y transferencias en una transaccion.
 
-### Ofrendas
+### Ofrendas y transferencias
+
+Las ofrendas y transferencias no tienen endpoints CRUD independientes.
+
+Se guardan, editan y eliminan dentro del flujo de sobres:
 
 ```text
-GET    /api/ofrendas
-GET    /api/ofrendas?idIglesia=1
-GET    /api/ofrendas/sobre/:idSobre
-GET    /api/ofrendas/:id
-POST   /api/ofrendas
-PUT    /api/ofrendas/:id
-DELETE /api/ofrendas/:id
+POST /api/sobres
+PUT  /api/sobres/:id
+GET  /api/sobres/:id
 ```
 
-Aunque el frontend actual guarda ofrendas dentro del sobre, el backend conserva endpoints CRUD para consultar o administrar ofrendas individualmente.
-
-### Transferencias
-
-```text
-GET    /api/transferencias
-GET    /api/transferencias?idIglesia=1
-GET    /api/transferencias/sobre/:idSobre
-GET    /api/transferencias/:id
-POST   /api/transferencias
-PUT    /api/transferencias/:id
-DELETE /api/transferencias/:id
-```
-
-Aunque el frontend actual guarda transferencias dentro del sobre, el backend conserva endpoints CRUD para consultar o administrar transferencias individualmente.
+Esta decision mantiene una sola regla de negocio: la suma de transferencias debe ser igual al total incluido del sobre.
 
 ### Reportes
 
@@ -508,4 +491,3 @@ Formato de error:
   "message": "Mensaje de error"
 }
 ```
-

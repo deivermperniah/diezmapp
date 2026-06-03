@@ -169,10 +169,9 @@ const saveContribution = async (form) => {
       fecha: form.fecha,
       idIglesia: Number(getIglesiaActivaId()),
       idMiembro: Number(form.idMiembro),
+      idMoneda: form.idMoneda,
       montoDiezmo: form.montoDiezmo || 0,
-      idMonedaDiezmo: form.idMonedaDiezmo,
       montoPactoAmor: form.montoPactoAmor || 0,
-      idMonedaPacto: form.idMonedaPacto || form.idMonedaDiezmo,
       ofrendas: form.ofrendas,
       transferencias: form.transferencias,
     }

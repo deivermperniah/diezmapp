@@ -53,8 +53,6 @@ GET /api/monedas
 ```text
 /api/miembros
 /api/sobres
-/api/ofrendas
-/api/transferencias
 /api/reportes
 ```
 

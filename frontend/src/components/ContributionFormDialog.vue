@@ -65,7 +65,6 @@ const newOfrenda = () => ({
   key: createKey(),
   nombreOfrenda: '',
   montoOfrenda: '',
-  idMoneda: form.idMonedaGlobal || props.monedas[0]?.idMoneda || '$',
 })
 
 const newTransferencia = () => ({
@@ -74,7 +73,6 @@ const newTransferencia = () => ({
   numeroTransferencia: '',
   bancoReceptorCuenta: '',
   montoTransferencia: '',
-  idMoneda: form.idMonedaGlobal || props.monedas[0]?.idMoneda || '$',
 })
 
 const resetForm = () => {
@@ -87,11 +85,10 @@ const resetForm = () => {
   form.montoPactoAmor = props.sobre?.montoPactoAmor ?? ''
   form.ofrendas = props.sobre?.ofrendas?.length
     ? props.sobre.ofrendas.map((ofrenda) => ({
-        key: createKey(),
-        nombreOfrenda: ofrenda.nombreOfrenda || '',
-        montoOfrenda: ofrenda.montoOfrenda ?? '',
-        idMoneda: dollarCurrency,
-      }))
+      key: createKey(),
+      nombreOfrenda: ofrenda.nombreOfrenda || '',
+      montoOfrenda: ofrenda.montoOfrenda ?? '',
+    }))
     : [newOfrenda()]
   form.transferencias = props.sobre?.transferencias?.length
     ? props.sobre.transferencias.map((transferencia) => ({
@@ -100,7 +97,6 @@ const resetForm = () => {
         numeroTransferencia: transferencia.numeroTransferencia || '',
         bancoReceptorCuenta: transferencia.bancoReceptorCuenta || '',
         montoTransferencia: transferencia.montoTransferencia ?? '',
-        idMoneda: dollarCurrency,
       }))
     : [newTransferencia()]
   currentStep.value = 1
@@ -211,13 +207,7 @@ watch(
 
 watch(
   () => form.idMonedaGlobal,
-  (idMoneda) => {
-    form.ofrendas.forEach((ofrenda) => {
-      ofrenda.idMoneda = idMoneda
-    })
-    form.transferencias.forEach((transferencia) => {
-      transferencia.idMoneda = idMoneda
-    })
+  () => {
     if (isBolivarSelected.value) loadDollarRate()
   },
 )
@@ -229,7 +219,7 @@ const totalCapturado = computed(() => {
   return Number((diezmo + pacto + ofrendas).toFixed(2))
 })
 
-const totalCapturadoOriginal = computed(() => {
+const totalCapturadoEntrada = computed(() => {
   const diezmo = parseAmount(form.montoDiezmo)
   const pacto = parseAmount(form.montoPactoAmor)
   const ofrendas = form.ofrendas.reduce((total, ofrenda) => total + parseAmount(ofrenda.montoOfrenda), 0)
@@ -275,16 +265,14 @@ const submit = () => {
   emit('save', {
     fecha: form.fecha,
     idMiembro: form.idMiembro,
+    idMoneda: form.idMonedaGlobal,
     montoDiezmo: parseAmount(form.montoDiezmo),
-    idMonedaDiezmo: form.idMonedaGlobal,
     montoPactoAmor: parseAmount(form.montoPactoAmor),
-    idMonedaPacto: form.idMonedaGlobal,
     ofrendas: form.ofrendas
       .filter((ofrenda) => parseAmount(ofrenda.montoOfrenda) > 0)
-      .map(({ nombreOfrenda, montoOfrenda, idMoneda }) => ({
+      .map(({ nombreOfrenda, montoOfrenda }) => ({
         nombreOfrenda,
         montoOfrenda: parseAmount(montoOfrenda),
-        idMoneda,
       })),
     transferencias: form.transferencias.map(
       ({
@@ -292,13 +280,11 @@ const submit = () => {
         numeroTransferencia,
         bancoReceptorCuenta,
         montoTransferencia,
-        idMoneda,
       }) => ({
         fechaTransferencia,
         numeroTransferencia,
         bancoReceptorCuenta,
         montoTransferencia: parseAmount(montoTransferencia),
-        idMoneda,
       }),
     ),
   })
@@ -506,7 +492,7 @@ const submit = () => {
           </section>
 
           <div v-if="currentStep === 4" class="totals-strip">
-            <span v-if="isBolivarSelected">Total: Bs {{ formatUsd(totalCapturadoOriginal) }} = $ {{ formatUsd(totalCapturado) }}</span>
+            <span v-if="isBolivarSelected">Total: Bs {{ formatUsd(totalCapturadoEntrada) }} = $ {{ formatUsd(totalCapturado) }}</span>
             <span v-else>Total: $ {{ formatUsd(totalCapturado) }}</span>
             <span>Transferencias: $ {{ formatUsd(totalTransferencias) }}</span>
           </div>

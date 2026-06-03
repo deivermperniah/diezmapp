@@ -14,6 +14,8 @@ const getCurrencyById = (idMoneda) => {
   return currencies.find((currency) => currency.idMoneda === value || currency.simbolo === value) || null;
 };
 
+export const getCurrencies = () => currencies;
+
 export const getTasaDolarOficial = async () => {
   if (cachedRate && Date.now() - cachedRate.cachedAt < RATE_CACHE_TTL_MS) {
     return {

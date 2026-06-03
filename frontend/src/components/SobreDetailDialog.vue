@@ -1,8 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { getOfrendasBySobre } from '@/services/ofrendas.service'
 import { getSobre } from '@/services/sobres.service'
-import { getTransferenciasBySobre } from '@/services/transferencias.service'
 import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
 
@@ -39,15 +37,7 @@ const loadSobre = async () => {
   error.value = ''
 
   try {
-    const [sobreData, ofrendas, transferencias] = await withMinimumDelay(() =>
-      Promise.all([
-        getSobre(props.idSobre),
-        getOfrendasBySobre(props.idSobre),
-        getTransferenciasBySobre(props.idSobre),
-      ]),
-    )
-
-    sobre.value = { ...sobreData, ofrendas, transferencias }
+    sobre.value = await withMinimumDelay(() => getSobre(props.idSobre))
   } catch (err) {
     error.value = err.message
   } finally {

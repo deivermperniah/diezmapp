@@ -86,7 +86,7 @@ const parseId = (idSobre) => parsePositiveInteger(idSobre, 'El id del sobre');
 
 const needsBcvRate = (idMoneda) => parseCurrency(idMoneda, 'La moneda') === 'Bs';
 
-const validateOfrendas = async (ofrendas = [], tasaBcvDolar = null) => {
+const validateOfrendas = async (ofrendas = [], idMoneda, tasaBcvDolar = null) => {
   if (!Array.isArray(ofrendas)) {
     throw new AppError('Las ofrendas de colaboracion no son validas.', 400);
   }
@@ -97,7 +97,7 @@ const validateOfrendas = async (ofrendas = [], tasaBcvDolar = null) => {
       .map(async (ofrenda, index) => {
         const conversion = await convertMoneyToUsd({
           amount: parseMoney(ofrenda.montoOfrenda, `El monto de la ofrenda ${index + 1}`),
-          idMoneda: parseCurrency(ofrenda.idMoneda, `La moneda de la ofrenda ${index + 1}`),
+          idMoneda,
           tasaBcvDolar,
         });
 
@@ -109,7 +109,7 @@ const validateOfrendas = async (ofrendas = [], tasaBcvDolar = null) => {
   );
 };
 
-const validateTransferencias = async (transferencias = [], tasaBcvDolar = null) => {
+const validateTransferencias = async (transferencias = [], idMoneda, tasaBcvDolar = null) => {
   if (!Array.isArray(transferencias) || transferencias.length === 0) {
     throw new AppError('Debe registrar al menos una transferencia.', 400);
   }
@@ -121,10 +121,7 @@ const validateTransferencias = async (transferencias = [], tasaBcvDolar = null) 
           transferencia.montoTransferencia,
           `El monto de la transferencia ${index + 1}`,
         ),
-        idMoneda: parseCurrency(
-          transferencia.idMoneda,
-          `La moneda de la transferencia ${index + 1}`,
-        ),
+        idMoneda,
         tasaBcvDolar,
       });
 
@@ -152,28 +149,24 @@ const validateSobrePayload = async (payload) => {
   });
   const ofrendaInputs = payload.ofrendas || [];
   const transferenciaInputs = payload.transferencias || [];
-  const requiresBcvRate = [
-    payload.idMonedaDiezmo,
-    payload.idMonedaPacto,
-    ...ofrendaInputs.map((ofrenda) => ofrenda?.idMoneda),
-    ...transferenciaInputs.map((transferencia) => transferencia?.idMoneda),
-  ].some((idMoneda) => idMoneda && needsBcvRate(idMoneda));
+  const idMoneda = parseCurrency(payload.idMoneda, 'La moneda del sobre');
+  const requiresBcvRate = needsBcvRate(idMoneda);
   const tasaBcvDolar = requiresBcvRate ? await getTasaBcvDolar() : null;
   const diezmo = await convertMoneyToUsd({
     amount: montoDiezmo,
-    idMoneda: parseCurrency(payload.idMonedaDiezmo, 'La moneda del diezmo'),
+    idMoneda,
     tasaBcvDolar,
   });
   const pacto =
     montoPactoAmor > 0
       ? await convertMoneyToUsd({
           amount: montoPactoAmor,
-          idMoneda: parseCurrency(payload.idMonedaPacto, 'La moneda del pacto'),
+          idMoneda,
           tasaBcvDolar,
         })
       : null;
-  const ofrendas = await validateOfrendas(ofrendaInputs, tasaBcvDolar);
-  const transferencias = await validateTransferencias(transferenciaInputs, tasaBcvDolar);
+  const ofrendas = await validateOfrendas(ofrendaInputs, idMoneda, tasaBcvDolar);
+  const transferencias = await validateTransferencias(transferenciaInputs, idMoneda, tasaBcvDolar);
   const totalOfrendas = ofrendas.reduce((total, ofrenda) => total + ofrenda.montoOfrenda, 0);
   const totalIncluido = Number((diezmo.amountUsd + (pacto?.amountUsd || 0) + totalOfrendas).toFixed(2));
   const totalTransferencias = Number(

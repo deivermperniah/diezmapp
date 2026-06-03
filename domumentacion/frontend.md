@@ -93,9 +93,6 @@ Rutas principales:
 /                  Dashboard
 /miembros          Miembros
 /sobres            Sobres
-/sobres/:id        Detalle de sobre
-/ofrendas          Ofrendas
-/transferencias    Transferencias
 /reportes          Reportes
 /configuracion     Configuracion
 /iglesias          Redirecciona a /configuracion
@@ -218,28 +215,6 @@ deleteSobre(idSobre)
 
 `getSobres()` usa la iglesia activa.
 
-### `ofrendas.service.js`
-
-Maneja consultas de ofrendas.
-
-Funciones:
-
-```js
-getOfrendas()
-getOfrendasBySobre(idSobre)
-```
-
-### `transferencias.service.js`
-
-Maneja consultas de transferencias.
-
-Funciones:
-
-```js
-getTransferencias()
-getTransferenciasBySobre(idSobre)
-```
-
 ### `reportes.service.js`
 
 Maneja reportes.
@@ -275,7 +250,7 @@ Opciones:
 - Reportes.
 - Configuracion.
 
-Aunque existen rutas de ofrendas y transferencias, no se muestran en el sidebar.
+Las ofrendas y transferencias se trabajan dentro del formulario y detalle del sobre.
 
 ### `AppTopbar.vue`
 
@@ -585,4 +560,3 @@ src/styles/theme.css
 - Menus.
 - Dialogos.
 - Scroll del selector de miembros.
-
