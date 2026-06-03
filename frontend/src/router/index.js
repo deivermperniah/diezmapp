@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '@/layouts/AppLayout.vue'
-import ConfiguracionView from '@/views/ConfiguracionView.vue'
-import DashboardView from '@/views/DashboardView.vue'
-import MiembrosView from '@/views/MiembrosView.vue'
-import ReportesView from '@/views/ReportesView.vue'
-import SobresView from '@/views/SobresView.vue'
+
+const ConfiguracionView = () => import('@/views/ConfiguracionView.vue')
+const DashboardView = () => import('@/views/DashboardView.vue')
+const MiembrosView = () => import('@/views/MiembrosView.vue')
+const ReportesView = () => import('@/views/ReportesView.vue')
+const SobresView = () => import('@/views/SobresView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

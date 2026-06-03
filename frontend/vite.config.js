@@ -10,6 +10,20 @@ export default defineConfig(({ mode }) => ({
     vue(),
     mode === 'development' && vueDevTools(),
   ].filter(Boolean),
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'vue-vendor', test: /node_modules[\\/](vue|@vue|vue-router)[\\/]/ },
+            { name: 'primevue-vendor', test: /node_modules[\\/](primevue|@primevue)[\\/]/, maxSize: 450 * 1024 },
+            { name: 'primeui-vendor', test: /node_modules[\\/]@primeuix[\\/]/ },
+            { name: 'primeicons-vendor', test: /node_modules[\\/]primeicons[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
