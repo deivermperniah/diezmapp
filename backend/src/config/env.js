@@ -14,6 +14,11 @@ if (missingEnvVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+const useDatabaseSsl = process.env.DB_SSL
+  ? process.env.DB_SSL === 'true'
+  : isProduction;
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 3000,
@@ -27,5 +32,6 @@ export const env = {
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    ssl: useDatabaseSsl,
   },
 };
