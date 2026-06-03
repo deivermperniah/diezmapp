@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onActivated, onMounted, ref, watch } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import ContributionFormDialog from '@/components/ContributionFormDialog.vue'
@@ -17,6 +17,7 @@ import { buildSobrePayload } from '@/utils/sobrePayload'
 const loading = ref(true)
 const loadingCards = ref(true)
 const saving = ref(false)
+const loadedOnce = ref(false)
 const dialogVisible = ref(false)
 const detailDialogVisible = ref(false)
 const error = ref('')
@@ -94,6 +95,7 @@ const loadDashboard = async ({ showLoading = true } = {}) => {
       loading.value = false
       loadingCards.value = false
     }
+    loadedOnce.value = true
   }
 }
 
@@ -193,6 +195,11 @@ const removeRow = (row) => {
 }
 
 onMounted(loadDashboard)
+onActivated(() => {
+  if (loadedOnce.value) {
+    loadDashboard({ showLoading: false })
+  }
+})
 watch([iglesiaActivaReady, iglesiaActivaId], () => loadDashboard())
 </script>
 

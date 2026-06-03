@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onActivated, onMounted, ref, watch } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import ContributionFormDialog from '@/components/ContributionFormDialog.vue'
@@ -23,6 +23,7 @@ const dialogVisible = ref(false)
 const memberDialogVisible = ref(false)
 const saving = ref(false)
 const savingMember = ref(false)
+const loadedOnce = ref(false)
 const loading = ref(false)
 const selectedSobre = ref(null)
 const detailDialogVisible = ref(false)
@@ -92,6 +93,7 @@ const loadData = async ({ showLoading = true } = {}) => {
     if (showLoading) {
       loading.value = false
     }
+    loadedOnce.value = true
   }
 }
 
@@ -234,6 +236,11 @@ const removeRow = (row) => {
 }
 
 onMounted(loadData)
+onActivated(() => {
+  if (loadedOnce.value) {
+    loadData({ showLoading: false })
+  }
+})
 watch([iglesiaActivaReady, iglesiaActivaId], () => loadData())
 </script>
 

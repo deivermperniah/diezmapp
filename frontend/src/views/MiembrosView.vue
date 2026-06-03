@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onActivated, onMounted, ref, watch } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
@@ -18,6 +18,7 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const selectedMember = ref(null)
 const saving = ref(false)
+const loadedOnce = ref(false)
 const optionsMenu = ref(null)
 const selectedMenuRow = ref(null)
 const confirm = useConfirm()
@@ -56,6 +57,7 @@ const loadData = async ({ showLoading = true } = {}) => {
     if (showLoading) {
       loading.value = false
     }
+    loadedOnce.value = true
   }
 }
 
@@ -148,6 +150,11 @@ const removeRow = (row) => {
 }
 
 onMounted(loadData)
+onActivated(() => {
+  if (loadedOnce.value) {
+    loadData({ showLoading: false })
+  }
+})
 watch([iglesiaActivaReady, iglesiaActivaId], () => loadData())
 </script>
 
