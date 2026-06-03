@@ -9,7 +9,6 @@ import StatCard from '@/components/StatCard.vue'
 import { getMonedas } from '@/services/catalogos.service'
 import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getMiembros } from '@/services/miembros.service'
-import { getReporteMensual } from '@/services/reportes.service'
 import { deleteSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
 import { formatDateEs } from '@/utils/date'
 import { withMinimumDelay } from '@/utils/loading'
@@ -27,13 +26,8 @@ const selectedSobre = ref(null)
 const selectedDetailId = ref(null)
 const optionsMenu = ref(null)
 const selectedMenuRow = ref(null)
-const reporteMensual = ref({ totals: { totalGeneral: 0 }, items: [] })
 const confirm = useConfirm()
 const toast = useToast()
-
-const currentDate = new Date()
-const currentMonth = currentDate.getMonth() + 1
-const currentYear = currentDate.getFullYear()
 
 const money = (value) => `$ ${Number(value || 0).toLocaleString('es-VE', {
   minimumFractionDigits: 2,
@@ -71,18 +65,16 @@ const loadDashboard = async ({ showLoading = true } = {}) => {
 
   try {
     const loader = () => Promise.all([
-        getMiembros(),
-        getMonedas(),
-        getSobres(),
-        getReporteMensual({ mes: currentMonth, anio: currentYear }),
-      ])
-    const [miembrosData, monedasData, sobresData, reporteData] =
+      getMiembros(),
+      getMonedas(),
+      getSobres(),
+    ])
+    const [miembrosData, monedasData, sobresData] =
       await (showLoading ? withMinimumDelay(loader) : loader())
 
     miembros.value = miembrosData
     monedas.value = monedasData
     sobres.value = sobresData
-    reporteMensual.value = reporteData
   } catch (err) {
     error.value = err.message
   } finally {

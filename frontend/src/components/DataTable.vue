@@ -109,8 +109,7 @@ const getSkeletonWidth = (column) => {
       >
         <template #body="{ data }">
           <PSkeleton v-if="visibleLoading" height="1rem" :width="getSkeletonWidth(column)" />
-          <PTag v-else-if="column.variant === 'tag' && data[column.key]" :value="data[column.key]" severity="success" />
-          <span v-else class="cell-text">{{ data[column.key] }}</span>
+          <span class="cell-text">{{ data[column.key] }}</span>
         </template>
       </Column>
       <Column

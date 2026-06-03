@@ -4,7 +4,6 @@ import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
 import MemberFormDialog from '@/components/MemberFormDialog.vue'
-import { getIglesias } from '@/services/catalogos.service'
 import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
 import {
   createMiembro,
@@ -15,7 +14,6 @@ import {
 import { withMinimumDelay } from '@/utils/loading'
 
 const miembros = ref([])
-const iglesias = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const selectedMember = ref(null)
@@ -37,10 +35,8 @@ const loadData = async ({ showLoading = true } = {}) => {
   }
 
   try {
-    const loader = () => Promise.all([getMiembros(), getIglesias()])
-    const [miembrosData, iglesiasData] = await (showLoading ? withMinimumDelay(loader) : loader())
-    miembros.value = miembrosData
-    iglesias.value = iglesiasData
+    const loader = () => getMiembros()
+    miembros.value = await (showLoading ? withMinimumDelay(loader) : loader())
   } catch (err) {
     toast.add({
       severity: 'error',

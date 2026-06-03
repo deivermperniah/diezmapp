@@ -6,7 +6,7 @@ import ContributionFormDialog from '@/components/ContributionFormDialog.vue'
 import DataTable from '@/components/DataTable.vue'
 import MemberFormDialog from '@/components/MemberFormDialog.vue'
 import SobreDetailDialog from '@/components/SobreDetailDialog.vue'
-import { getIglesias, getMonedas } from '@/services/catalogos.service'
+import { getMonedas } from '@/services/catalogos.service'
 import { getIglesiaActivaId, iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { createMiembro, getMiembros } from '@/services/miembros.service'
 import { createSobre, deleteSobre, getSiguienteNumeroSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
@@ -16,7 +16,6 @@ import { withMinimumDelay } from '@/utils/loading'
 const today = toLocalDateString()
 const miembros = ref([])
 const monedas = ref([])
-const iglesias = ref([])
 const sobres = ref([])
 const siguiente = ref(null)
 const dialogVisible = ref(false)
@@ -63,13 +62,11 @@ const loadData = async ({ showLoading = true } = {}) => {
     const loader = () => Promise.all([
       getMiembros(),
       getMonedas(),
-      getIglesias(),
       getSobres(),
     ])
-    const [miembrosData, monedasData, iglesiasData, sobresData] = await (showLoading ? withMinimumDelay(loader) : loader())
+    const [miembrosData, monedasData, sobresData] = await (showLoading ? withMinimumDelay(loader) : loader())
     miembros.value = miembrosData
     monedas.value = monedasData
-    iglesias.value = iglesiasData
     sobres.value = sobresData
     await loadSiguiente(today)
   } catch (err) {

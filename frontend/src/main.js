@@ -13,7 +13,6 @@ import InputText from 'primevue/inputtext'
 import Menu from 'primevue/menu'
 import Select from 'primevue/select'
 import Skeleton from 'primevue/skeleton'
-import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Toolbar from 'primevue/toolbar'
 
@@ -72,7 +71,6 @@ app.component('PInputText', InputText)
 app.component('PMenu', Menu)
 app.component('PSelect', Select)
 app.component('PSkeleton', Skeleton)
-app.component('PTag', Tag)
 app.component('PToast', Toast)
 app.component('PToolbar', Toolbar)
 

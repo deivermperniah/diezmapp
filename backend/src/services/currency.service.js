@@ -14,10 +14,6 @@ const getCurrencyById = (idMoneda) => {
   return currencies.find((currency) => currency.idMoneda === value || currency.simbolo === value) || null;
 };
 
-export const getUsdCurrency = async () => {
-  return currencies.find((currency) => currency.simbolo === '$');
-};
-
 export const getTasaDolarOficial = async () => {
   if (cachedRate && Date.now() - cachedRate.cachedAt < RATE_CACHE_TTL_MS) {
     return {
@@ -68,22 +64,17 @@ export const getTasaBcvDolar = async () => {
 };
 
 export const convertMoneyToUsd = async ({ amount, idMoneda, tasaBcvDolar }) => {
-  const currency = await getCurrencyById(idMoneda);
+  const currency = getCurrencyById(idMoneda);
 
   if (!currency) {
     throw new AppError('La moneda no existe.', 400);
   }
 
-  const usdCurrency = await getUsdCurrency();
   const simbolo = String(currency.simbolo).trim();
 
   if (simbolo === '$') {
     return {
       amountUsd: Number(amount.toFixed(2)),
-      originalAmount: Number(amount.toFixed(2)),
-      originalCurrencyId: currency.idMoneda,
-      usdCurrencyId: usdCurrency.idMoneda,
-      tasaBcvDolar: 1,
     };
   }
 
@@ -92,10 +83,6 @@ export const convertMoneyToUsd = async ({ amount, idMoneda, tasaBcvDolar }) => {
 
     return {
       amountUsd: Number((amount / tasa).toFixed(2)),
-      originalAmount: Number(amount.toFixed(2)),
-      originalCurrencyId: currency.idMoneda,
-      usdCurrencyId: usdCurrency.idMoneda,
-      tasaBcvDolar: tasa,
     };
   }
 
