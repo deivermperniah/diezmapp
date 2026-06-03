@@ -35,7 +35,12 @@ onMounted(async () => {
     <div class="main-shell">
       <AppTopbar />
       <main class="content-shell">
-        <RouterView />
+        <RouterView v-slot="{ Component, route }">
+          <KeepAlive>
+            <component :is="Component" v-if="route.meta.keepAlive" :key="route.name" />
+          </KeepAlive>
+          <component :is="Component" v-if="!route.meta.keepAlive" :key="route.fullPath" />
+        </RouterView>
       </main>
     </div>
   </div>
