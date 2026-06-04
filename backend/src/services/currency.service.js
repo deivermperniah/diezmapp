@@ -5,7 +5,7 @@ const currencies = [
   { idMoneda: '$', nombreMoneda: 'Dolar', simbolo: '$' },
 ];
 
-const BCV_RATE_URL = process.env.BCV_RATE_URL || 'https://ve.dolarapi.com/v1/dolares/oficial';
+const BCV_RATE_URL = 'https://ve.dolarapi.com/v1/dolares/oficial';
 const RATE_CACHE_TTL_MS = 5 * 60 * 1000;
 let cachedRate = null;
 

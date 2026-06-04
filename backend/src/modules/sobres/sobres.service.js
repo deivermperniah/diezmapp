@@ -8,6 +8,7 @@ import {
   parseRequiredText,
 } from '../../utils/validators.js';
 import { convertMoneyToUsd, getTasaBcvDolar } from '../../services/currency.service.js';
+import { findMiembroById } from '../miembros/miembros.repository.js';
 import { findOfrendasBySobreId } from '../ofrendas/ofrendas.repository.js';
 import { findTransferenciasBySobreId } from '../transferencias/transferencias.repository.js';
 import {
@@ -24,6 +25,18 @@ const parseFecha = (fecha) => parseDateParts(fecha);
 const parseId = (idSobre) => parsePositiveInteger(idSobre, 'El id del sobre');
 
 const needsBcvRate = (idMoneda) => parseCurrency(idMoneda, 'La moneda') === 'Bs';
+
+const validateMiembroIglesia = async (idMiembro, idIglesia) => {
+  const miembro = await findMiembroById(idMiembro);
+
+  if (!miembro) {
+    throw new AppError('Miembro no encontrado.', 404);
+  }
+
+  if (Number(miembro.idIglesia) !== Number(idIglesia)) {
+    throw new AppError('El miembro no pertenece a la iglesia seleccionada.', 400);
+  }
+};
 
 const validateOfrendas = async (ofrendas = [], idMoneda, tasaBcvDolar = null) => {
   if (!Array.isArray(ofrendas)) {
@@ -82,6 +95,8 @@ const validateTransferencias = async (transferencias = [], idMoneda, tasaBcvDola
 
 const validateSobrePayload = async (payload) => {
   const { fecha, mes, anio } = parseFecha(payload.fecha);
+  const idIglesia = parsePositiveInteger(payload.idIglesia, 'La iglesia');
+  const idMiembro = parsePositiveInteger(payload.idMiembro, 'El miembro');
   const montoDiezmo = parseMoney(payload.montoDiezmo, 'El monto de diezmo');
   const montoPactoAmor = parseMoney(payload.montoPactoAmor, 'El monto de pacto de amor', {
     required: false,
@@ -118,12 +133,14 @@ const validateSobrePayload = async (payload) => {
     throw new AppError('La suma de transferencias debe ser igual al total incluido.', 400);
   }
 
+  await validateMiembroIglesia(idMiembro, idIglesia);
+
   return {
     fecha,
     mes,
     anio,
-    idIglesia: parsePositiveInteger(payload.idIglesia, 'La iglesia'),
-    idMiembro: parsePositiveInteger(payload.idMiembro, 'El miembro'),
+    idIglesia,
+    idMiembro,
     montoDiezmo: diezmo.amountUsd,
     montoPactoAmor: pacto?.amountUsd || 0,
     totalIncluido,

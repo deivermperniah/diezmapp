@@ -20,6 +20,14 @@ const escapePdfText = (value) =>
     .replaceAll('(', '\\(')
     .replaceAll(')', '\\)')
 
+const escapeHtml = (value) =>
+  String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+
 const buildPdf = ({ title, period, headers, rows }) => {
   const color = ([r, g, b]) => `${r} ${g} ${b}`
   const text = (value, x, y, size = 10, bold = false, fill = [0.08, 0.12, 0.2]) =>
@@ -99,9 +107,9 @@ export const exportCsvFile = ({ headers, rows, filename }) => {
 }
 
 export const exportExcelFile = ({ columns, rows, title, period, filename }) => {
-  const headerCells = columns.map((column) => `<th>${column.label}</th>`).join('')
+  const headerCells = columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('')
   const bodyRows = rows
-    .map((row) => `<tr>${columns.map((column) => `<td>${row[column.label]}</td>`).join('')}</tr>`)
+    .map((row) => `<tr>${columns.map((column) => `<td>${escapeHtml(row[column.label])}</td>`).join('')}</tr>`)
     .join('')
 
   downloadFile(
@@ -115,8 +123,8 @@ export const exportExcelFile = ({ columns, rows, title, period, filename }) => {
           </style>
         </head>
         <body>
-          <h2>${title}</h2>
-          <p>${period}</p>
+          <h2>${escapeHtml(title)}</h2>
+          <p>${escapeHtml(period)}</p>
           <table border="1">
             <thead><tr>${headerCells}</tr></thead>
             <tbody>${bodyRows}</tbody>

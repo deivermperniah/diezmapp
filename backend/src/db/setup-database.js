@@ -20,12 +20,17 @@ if (missingEnvVars.length > 0) {
 }
 
 const quoteIdentifier = (identifier) => `"${identifier.replaceAll('"', '""')}"`;
+const isProduction = process.env.NODE_ENV === 'production';
+const useDatabaseSsl = process.env.DB_SSL
+  ? process.env.DB_SSL === 'true'
+  : isProduction;
 
 const databaseConfig = {
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
+  ssl: useDatabaseSsl ? { rejectUnauthorized: false } : false,
 };
 
 const targetDatabase = process.env.DB_NAME;
