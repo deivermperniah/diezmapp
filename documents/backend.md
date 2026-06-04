@@ -155,6 +155,12 @@ Hace:
 3. Lee `database/diezmos_db.sql`.
 4. Aplica el esquema en la base de datos.
 
+Usa la misma regla de SSL que el servidor:
+
+- Si `DB_SSL=true`, conecta con SSL.
+- Si `DB_SSL` no existe y `NODE_ENV=production`, conecta con SSL.
+- En desarrollo local con `DB_SSL=false`, conecta sin SSL.
+
 ## Middleware
 
 ### `error.middleware.js`
@@ -362,10 +368,11 @@ El backend:
 1. Valida fecha.
 2. Valida iglesia.
 3. Valida miembro.
-4. Convierte montos a dolares si vienen en bolivares.
-5. Calcula total incluido.
-6. Verifica que transferencias sumen el total.
-7. Guarda sobre, ofrendas y transferencias en una transaccion.
+4. Valida que el miembro pertenezca a la iglesia seleccionada.
+5. Convierte montos a dolares si vienen en bolivares.
+6. Calcula total incluido.
+7. Verifica que transferencias sumen el total.
+8. Guarda sobre, ofrendas y transferencias en una transaccion.
 
 ### Ofrendas y transferencias
 

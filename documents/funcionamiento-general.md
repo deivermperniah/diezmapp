@@ -268,6 +268,8 @@ pnpm build
 
 `pnpm db:setup` crea la base `diezmos_db` si no existe y aplica el esquema desde `database/diezmos_db.sql`.
 
+El setup de base de datos usa `DB_SSL` igual que el servidor. En local normalmente queda en `false`; en Vercel, Neon o servicios con conexion segura debe estar en `true`.
+
 ## Variables de entorno
 
 Backend:
@@ -349,6 +351,7 @@ El sistema valida:
 - Transferencias mayores a cero.
 - Existencia de iglesia.
 - Existencia de miembro.
+- Que el miembro pertenezca a la iglesia seleccionada.
 - Numeracion unica de sobres por mes, anio e iglesia.
 - Que la suma de transferencias coincida con el total incluido.
 
@@ -360,9 +363,10 @@ El sistema valida:
 4. El usuario ingresa una o varias transferencias.
 5. El frontend calcula equivalentes en dolares si la moneda es bolivar.
 6. El backend vuelve a validar y convertir montos.
-7. El backend calcula el total incluido.
-8. El backend compara total incluido contra transferencias.
-9. Si todo esta correcto, guarda:
+7. El backend valida que el miembro pertenezca a la iglesia seleccionada.
+8. El backend calcula el total incluido.
+9. El backend compara total incluido contra transferencias.
+10. Si todo esta correcto, guarda:
    - Registro en `SOBRE`.
    - Registros en `OFRENDA_COLABORACION`.
    - Registros en `TRANSFERENCIA`.

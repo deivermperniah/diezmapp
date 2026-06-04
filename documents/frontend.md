@@ -426,6 +426,8 @@ Exportaciones:
 
 Si no hay datos y se intenta exportar, muestra toast `Sin datos`.
 
+La exportacion Excel escapa contenido HTML en titulos, columnas y celdas para que nombres, bancos o referencias se exporten como texto.
+
 ### ConfiguracionView
 
 Muestra:

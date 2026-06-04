@@ -308,6 +308,7 @@ Esto quiere decir:
 
 - Un sobre debe estar asociado a un miembro existente.
 - No se puede registrar un sobre para un miembro que no existe.
+- La aplicacion tambien valida que el miembro pertenezca a la misma iglesia del sobre.
 
 Ejemplo con cascade:
 
