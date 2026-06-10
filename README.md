@@ -29,6 +29,7 @@ Los detalles completos del proyecto estan en:
 
 ```text
 documents/funcionamiento-general.md
+documents/guia-archivo-por-archivo.md
 documents/frontend.md
 documents/backend.md
 documents/database.md
