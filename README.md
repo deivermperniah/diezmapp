@@ -1,52 +1,68 @@
 # DIEZMAPP
 
-Aplicacion web para administrar sobres de diezmos, ofrendas, transferencias y reportes por iglesia.
-
-## Resumen
-
-DIEZMAPP permite registrar sobres por miembro e iglesia, calcular el total incluido, validar que las transferencias coincidan con ese total y consultar reportes semanales o mensuales. El sistema guarda los montos operativos en dolares y convierte desde bolivares usando la tasa oficial configurada por el backend.
-
-Funciones principales:
-
-- Administrar iglesias.
-- Seleccionar una iglesia activa.
-- Administrar miembros por iglesia.
-- Registrar sobres con diezmo, pacto de amor, ofrendas y transferencias.
-- Reiniciar la numeracion de sobres cada mes y por iglesia.
-- Consultar dashboard, detalles de sobres y reportes.
-- Exportar reportes en Excel, PDF y CSV.
+Aplicación web para administrar sobres de diezmos, ofrendas, transferencias y reportes por iglesia.
 
 ## Stack
 
-- Frontend: Vue 3, Vite, Vue Router, PrimeVue y CSS propio.
-- Backend: Node.js, Express, PostgreSQL, `pg`, `dotenv` y `cors`.
-- Base de datos: PostgreSQL.
-- Package manager: pnpm.
+- Frontend: Vue 3 + Vite + PrimeVue.
+- Backend: Node.js + Express + PostgreSQL.
+- Gestor de paquetes: pnpm.
 
-## Documentacion
-
-Los detalles completos del proyecto estan en:
+## Estructura
 
 ```text
-documents/funcionamiento-general.md
-documents/guia-archivo-por-archivo.md
-documents/frontend.md
-documents/backend.md
-documents/database.md
+backend/
+├── src/
+│   ├── modules/     # iglesias, miembros, sobres, ofrendas, transferencias, reportes…
+│   ├── config/      # Variables de entorno
+│   ├── db/          # Pool y setup de la base de datos
+│   ├── middlewares/ # Manejo de errores
+│   └── services/    # Salud y conversión de moneda
+frontend/
+├── src/
+│   ├── views/       # Dashboard, Miembros, Sobres, Reportes, Configuración
+│   ├── components/  # Componentes y diálogos reutilizables
+│   ├── services/    # Llamadas al backend
+│   ├── router/      # Vue Router
+│   └── utils/       # Exportadores y utilidades de dinero/fechas
+database/            # Esquema SQL
+documents/           # Documentación del proyecto
 ```
 
-## Inicio rapido
+## Puesta en marcha
 
-```bash
-pnpm --dir backend install
-pnpm --dir frontend install
-cp backend/.env.example backend/.env
-pnpm --dir backend db:setup
-pnpm --dir backend dev
-pnpm --dir frontend dev --host 127.0.0.1
-```
+PostgreSQL debe estar instalado y corriendo.
 
-PostgreSQL debe estar instalado y corriendo antes de ejecutar `pnpm --dir backend db:setup`.
+1. Instala dependencias:
+
+   ```sh
+   pnpm --dir backend install
+   pnpm --dir frontend install
+   ```
+
+2. Configura el backend:
+
+   ```sh
+   cp backend/.env.example backend/.env
+   pnpm --dir backend db:setup
+   ```
+
+3. Levanta backend y frontend:
+
+   ```sh
+   pnpm --dir backend dev
+   pnpm --dir frontend dev --host 127.0.0.1
+   ```
+
+## Comandos
+
+| Comando | Acción |
+| :-- | :-- |
+| `pnpm --dir backend dev` | Backend con recarga automática (nodemon) |
+| `pnpm --dir backend start` | Backend en producción |
+| `pnpm --dir frontend dev` | Dev server de Vite |
+| `pnpm --dir frontend build` | Build de producción |
+| `pnpm --dir frontend lint` | Lint (oxlint + eslint) |
 
 ## Rutas principales
 
