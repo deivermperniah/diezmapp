@@ -1,4 +1,4 @@
-# DIEZMAPP
+# DIEZMAPP · Proyecto académico
 
 Aplicación web para administrar sobres de diezmos, ofrendas, transferencias y reportes por iglesia.
 
