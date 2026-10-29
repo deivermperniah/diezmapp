@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
         codeSplitting: {
           groups: [
             { name: 'vue-vendor', test: /node_modules[\\/](vue|@vue|vue-router)[\\/]/ },
-            { name: 'primevue-vendor', test: /node_modules[\\/](primevue|@primevue)[\\/]/, maxSize: 450 * 1024 },
+            { name: 'primevue-vendor', test: /node_modules[\\/](primevue|@primevue)[\\/]/ },
             { name: 'primeui-vendor', test: /node_modules[\\/]@primeuix[\\/]/ },
             { name: 'primeicons-vendor', test: /node_modules[\\/]primeicons[\\/]/ },
           ],
