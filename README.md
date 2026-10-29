@@ -2,6 +2,16 @@
 
 Aplicación web para administrar sobres de diezmos, ofrendas, transferencias y reportes por iglesia.
 
+🔗 Demo: https://diezmapp.vercel.app/
+
+## Qué se puede hacer
+
+- **Registrar sobres** de diezmo, pacto de amor y ofrendas por iglesia y fecha.
+- **Validar montos**: el backend rechaza el guardado si el total no coincide con las transferencias.
+- **Convertir bolívares a dólares** con la tasa oficial configurada.
+- **Exportar reportes** en Excel, PDF y CSV.
+- **Configurar** iglesias, miembros, monedas y tasa de cambio.
+
 ## Stack
 
 - Frontend: Vue 3 + Vite + PrimeVue.
