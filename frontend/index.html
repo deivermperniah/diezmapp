@@ -11,19 +11,87 @@
       body {
         margin: 0;
         background: #f6f7fb;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       .boot-sidebar {
         position: fixed;
         inset: 0 auto 0 0;
         width: 268px;
+        box-sizing: border-box;
+        padding: 20px 16px;
         background: #111827;
       }
 
-      .boot-topbar {
-        height: 72px;
+      .boot-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 8px 22px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: 15px;
+      }
+
+      .boot-brand img {
+        width: 42px;
+        height: 42px;
+        box-sizing: border-box;
+        padding: 5px;
+        border-radius: 8px;
+        background: #fff;
+        object-fit: contain;
+      }
+
+      .boot-nav {
+        display: grid;
+        gap: 6px;
+        margin-top: 18px;
+      }
+
+      .boot-nav span {
+        height: 42px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .boot-main {
         margin-left: 268px;
+      }
+
+      .boot-topbar {
+        display: flex;
+        align-items: center;
+        height: 72px;
+        box-sizing: border-box;
+        padding: 0 30px;
         border-bottom: 1px solid #dde3ed;
+      }
+
+      .boot-content {
+        display: grid;
+        gap: 16px;
+        padding: 28px 30px;
+      }
+
+      .boot-bar {
+        border-radius: 6px;
+        background: linear-gradient(90deg, #e6eaf1 0%, #f1f4f8 50%, #e6eaf1 100%);
+        background-size: 200% 100%;
+        animation: boot-shimmer 1.2s linear infinite;
+      }
+
+      .boot-panel {
+        height: 360px;
+        border: 1px solid #dde3ed;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      @keyframes boot-shimmer {
+        to {
+          background-position: -200% 0;
+        }
       }
 
       @media (max-width: 860px) {
@@ -31,16 +99,34 @@
           display: none;
         }
 
-        .boot-topbar {
+        .boot-main {
           margin-left: 0;
+        }
+
+        .boot-topbar,
+        .boot-content {
+          padding-right: 18px;
+          padding-left: 18px;
         }
       }
     </style>
   </head>
   <body>
     <div id="app">
-      <div class="boot-sidebar"></div>
-      <div class="boot-topbar"></div>
+      <aside class="boot-sidebar">
+        <div class="boot-brand">
+          <img src="/logo.png" alt="">
+          <strong>diezmapp</strong>
+        </div>
+        <div class="boot-nav"><span></span><span></span><span></span><span></span><span></span></div>
+      </aside>
+      <div class="boot-main">
+        <div class="boot-topbar"><div class="boot-bar" style="width: 140px; height: 22px"></div></div>
+        <div class="boot-content">
+          <div class="boot-bar" style="width: 220px; height: 18px"></div>
+          <div class="boot-panel"></div>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>
