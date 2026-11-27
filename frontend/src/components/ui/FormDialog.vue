@@ -1,4 +1,6 @@
 <script setup>
+import PButton from 'primevue/button'
+import PDialog from 'primevue/dialog'
 defineProps({
   visible: { type: Boolean, default: false },
   title: { type: String, required: true },

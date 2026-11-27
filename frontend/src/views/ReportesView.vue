@@ -1,4 +1,7 @@
 <script setup>
+import PButton from 'primevue/button'
+import PDatePicker from 'primevue/datepicker'
+import PDialog from 'primevue/dialog'
 import { computed, reactive, ref, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import DataTable from '@/components/DataTable.vue'
@@ -9,7 +12,6 @@ import { iglesiaActivaId } from '@/services/iglesia-activa.service'
 import { getReporteMensual, getReporteSemanal } from '@/services/reportes.service'
 import { formatDateEs, toLocalDateString } from '@/utils/date'
 import { exportCsvFile, exportExcelFile, exportPdfFile } from '@/utils/exporters'
-import { withMinimumDelay } from '@/utils/loading'
 
 const toast = useToast()
 const today = toLocalDateString()
@@ -188,17 +190,15 @@ const loadReporte = async () => {
   error.value = ''
 
   try {
-    const reporteData = await withMinimumDelay(() =>
-      tipoReporte.value === 'semanal'
-        ? getReporteSemanal({
-            fechaInicio: filtros.fechaInicio,
-            fechaFin: filtros.fechaFin,
-          })
-        : getReporteMensual({
-            mes: filtros.mes,
-            anio: filtros.anio,
-          }),
-    )
+    const reporteData = await (tipoReporte.value === 'semanal'
+      ? getReporteSemanal({
+          fechaInicio: filtros.fechaInicio,
+          fechaFin: filtros.fechaFin,
+        })
+      : getReporteMensual({
+          mes: filtros.mes,
+          anio: filtros.anio,
+        }))
 
     reporte.value = reporteData
   } catch (err) {

@@ -3,18 +3,6 @@ import ConfirmationService from 'primevue/confirmationservice'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import Aura from '@primeuix/themes/aura'
-import Button from 'primevue/button'
-import Card from 'primevue/card'
-import ConfirmDialog from 'primevue/confirmdialog'
-import DatePicker from 'primevue/datepicker'
-import Dialog from 'primevue/dialog'
-import InputNumber from 'primevue/inputnumber'
-import InputText from 'primevue/inputtext'
-import Menu from 'primevue/menu'
-import Select from 'primevue/select'
-import Skeleton from 'primevue/skeleton'
-import Toast from 'primevue/toast'
-import Toolbar from 'primevue/toolbar'
 
 import 'primeicons/primeicons.css'
 import './styles/base.css'
@@ -61,17 +49,5 @@ app.use(PrimeVue, {
 })
 app.use(ToastService)
 app.use(ConfirmationService)
-app.component('PButton', Button)
-app.component('PCard', Card)
-app.component('PConfirmDialog', ConfirmDialog)
-app.component('PDatePicker', DatePicker)
-app.component('PDialog', Dialog)
-app.component('PInputNumber', InputNumber)
-app.component('PInputText', InputText)
-app.component('PMenu', Menu)
-app.component('PSelect', Select)
-app.component('PSkeleton', Skeleton)
-app.component('PToast', Toast)
-app.component('PToolbar', Toolbar)
 
 app.mount('#app')

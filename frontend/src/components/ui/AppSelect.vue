@@ -1,4 +1,5 @@
 <script setup>
+import PSelect from 'primevue/select'
 import { computed } from 'vue'
 
 const props = defineProps({

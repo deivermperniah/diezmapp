@@ -1,4 +1,5 @@
 <script setup>
+import PButton from 'primevue/button'
 defineProps({
   type: { type: String, default: 'button' },
   variant: { type: String, default: 'primary' },

@@ -1,4 +1,7 @@
 <script setup>
+import PInputText from 'primevue/inputtext'
+import PSkeleton from 'primevue/skeleton'
+import PToolbar from 'primevue/toolbar'
 import { computed, ref } from 'vue'
 import Column from 'primevue/column'
 import PrimeDataTable from 'primevue/datatable'

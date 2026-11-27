@@ -1,4 +1,6 @@
 <script setup>
+import PButton from 'primevue/button'
+import PMenu from 'primevue/menu'
 import { computed, onActivated, onMounted, ref, watch } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
@@ -11,7 +13,6 @@ import {
   getMiembros,
   updateMiembro,
 } from '@/services/miembros.service'
-import { withMinimumDelay } from '@/utils/loading'
 
 const miembros = ref([])
 const loading = ref(false)
@@ -45,7 +46,7 @@ const loadData = async ({ showLoading = true } = {}) => {
 
   try {
     const loader = () => getMiembros()
-    miembros.value = await (showLoading ? withMinimumDelay(loader) : loader())
+    miembros.value = await loader()
   } catch (err) {
     toast.add({
       severity: 'error',

@@ -1,4 +1,7 @@
 <script setup>
+import PButton from 'primevue/button'
+import PMenu from 'primevue/menu'
+import PSkeleton from 'primevue/skeleton'
 import { computed, onMounted, ref } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
@@ -16,7 +19,6 @@ import {
   setIglesiaActivaId,
 } from '@/services/iglesia-activa.service'
 import { formatDateTimeEs } from '@/utils/date'
-import { withMinimumDelay } from '@/utils/loading'
 
 const toast = useToast()
 const confirm = useConfirm()
@@ -64,7 +66,7 @@ const loadData = async ({ showLoading = true } = {}) => {
 
   try {
     const loader = () => getIglesias()
-    const iglesiasData = await (showLoading ? withMinimumDelay(loader) : loader())
+    const iglesiasData = await loader()
     iglesias.value = iglesiasData
 
     const savedId = getIglesiaActivaId()
@@ -93,7 +95,7 @@ const loadTasaDolar = async () => {
   loadingTasa.value = true
 
   try {
-    const tasa = await withMinimumDelay(() => getTasaDolar())
+    const tasa = await getTasaDolar()
     tasaDolar.value = tasa.valor
     fechaTasa.value = tasa.fechaActualizacion
   } catch (err) {

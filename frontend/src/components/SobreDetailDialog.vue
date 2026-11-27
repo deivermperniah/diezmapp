@@ -1,8 +1,9 @@
 <script setup>
+import PDialog from 'primevue/dialog'
+import PSkeleton from 'primevue/skeleton'
 import { computed, ref, watch } from 'vue'
 import { getSobre } from '@/services/sobres.service'
 import { formatDateEs } from '@/utils/date'
-import { withMinimumDelay } from '@/utils/loading'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -37,7 +38,7 @@ const loadSobre = async () => {
   error.value = ''
 
   try {
-    sobre.value = await withMinimumDelay(() => getSobre(props.idSobre))
+    sobre.value = await getSobre(props.idSobre)
   } catch (err) {
     error.value = err.message
   } finally {

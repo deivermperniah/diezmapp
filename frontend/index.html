@@ -1,13 +1,47 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="es">
   <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="/logo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111827">
     <title>diezmapp</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #f6f7fb;
+      }
+
+      .boot-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 268px;
+        background: #111827;
+      }
+
+      .boot-topbar {
+        height: 72px;
+        margin-left: 268px;
+        border-bottom: 1px solid #dde3ed;
+      }
+
+      @media (max-width: 860px) {
+        .boot-sidebar {
+          display: none;
+        }
+
+        .boot-topbar {
+          margin-left: 0;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="boot-sidebar"></div>
+      <div class="boot-topbar"></div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

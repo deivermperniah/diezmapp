@@ -1,4 +1,6 @@
 <script setup>
+import PButton from 'primevue/button'
+import PMenu from 'primevue/menu'
 import { computed, onActivated, onMounted, ref, watch } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
@@ -11,7 +13,6 @@ import { getIglesiaActivaId, iglesiaActivaId, iglesiaActivaReady } from '@/servi
 import { getMiembros } from '@/services/miembros.service'
 import { deleteSobre, getSobre, getSobres, updateSobre } from '@/services/sobres.service'
 import { formatDateEs } from '@/utils/date'
-import { withMinimumDelay } from '@/utils/loading'
 import { buildSobrePayload } from '@/utils/sobrePayload'
 
 const loading = ref(true)
@@ -83,7 +84,7 @@ const loadDashboard = async ({ showLoading = true } = {}) => {
       getSobres(),
     ])
     const [miembrosData, monedasData, sobresData] =
-      await (showLoading ? withMinimumDelay(loader) : loader())
+      await loader()
 
     miembros.value = miembrosData
     monedas.value = monedasData

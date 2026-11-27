@@ -1,4 +1,6 @@
 <script setup>
+import PConfirmDialog from 'primevue/confirmdialog'
+import PToast from 'primevue/toast'
 import { onMounted } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppTopbar from '@/components/AppTopbar.vue'
@@ -12,6 +14,7 @@ import {
 
 onMounted(async () => {
   const activeId = getIglesiaActivaId()
+  if (activeId) setIglesiaActivaReady()
   const iglesias = await getIglesias().catch(() => [])
   const fallback = iglesias[0] || null
 

@@ -1,4 +1,6 @@
 <script setup>
+import PCard from 'primevue/card'
+import PSkeleton from 'primevue/skeleton'
 defineProps({
   label: { type: String, required: true },
   value: { type: [String, Number], required: true },
